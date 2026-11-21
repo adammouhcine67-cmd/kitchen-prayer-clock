@@ -213,7 +213,7 @@ var HIJRI_MONTHS = ['Muharram', 'Safar', 'Rabi al-Awwal', 'Rabi al-Thani', 'Juma
   'Rajab', "Sha'ban", 'Ramadan', 'Shawwal', "Dhu al-Qi'dah", 'Dhu al-Hijjah'];
 var DEFAULTS = {
   city: '', lat: null, lng: null, method: 'MWL', asr: 1, h24: true, unit: 'C', sound: 'adhan', adhanV: 1,
-  alarms: { fajr: true, dhuhr: true, asr: true, maghrib: true, isha: true },
+  alarms: { fajr: false, dhuhr: true, asr: true, maghrib: true, isha: true },
   warn: { fajr: false, dhuhr: true, asr: true, maghrib: true, isha: true },
   adj: { fajr: 0, sunrise: 0, dhuhr: 0, asr: 0, maghrib: 0, isha: 0 }
 };
@@ -232,6 +232,8 @@ function loadSettings() {
   for (k in DEFAULTS.warn) if (out.warn[k] === undefined) out.warn[k] = DEFAULTS.warn[k];
   // one-time switch to the adhan now that adhan.mp3 is included
   if (!s.adhanV) { out.sound = 'adhan'; out.adhanV = 1; store('kpc-settings', out); }
+  // one-time: no Fajr alarms (adhan or warning)
+  if (!s.fajrOff) { out.alarms.fajr = false; out.warn.fajr = false; out.fajrOff = 1; store('kpc-settings', out); }
   return out;
 }
 var S = loadSettings();
