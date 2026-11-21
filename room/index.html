@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="My Room">
+<meta name="theme-color" content="#0a1222">
+<title>My Room</title>
+<style>
+:root{--bg1:#0a1222;--bg2:#0f2a3a;--card:rgba(255,255,255,.06);--line:rgba(255,255,255,.12);
+ --text:#f1f5f9;--muted:#94a3b8;--blue:#3b82f6;--blue2:#60a5fa;--amber:#e8a33d;--amber2:#f6c86b}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#0a1222}
+body{background:linear-gradient(160deg,var(--bg1),var(--bg2));color:var(--text);
+ font-family:-apple-system,"SF Pro Display","Helvetica Neue",Helvetica,Arial,sans-serif;
+ -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
+.app{display:flex;flex-direction:column;height:100%;padding:max(24px,env(safe-area-inset-top)) 32px max(28px,env(safe-area-inset-bottom))}
+header{display:flex;justify-content:space-between;align-items:flex-start}
+.date{font-size:24px;font-weight:600}
+.greet{font-size:18px;color:var(--muted);margin-top:4px}
+.gear{width:48px;height:48px;border-radius:24px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:22px;cursor:pointer}
+.clock{font-size:clamp(90px,15vw,170px);font-weight:200;letter-spacing:-.04em;line-height:1;margin:clamp(16px,4vh,48px) 0 clamp(20px,5vh,56px);font-variant-numeric:tabular-nums}
+.tiles{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:24px;min-height:0}
+.tile{position:relative;border:0;border-radius:32px;padding:32px;text-align:left;color:#fff;cursor:pointer;display:flex;flex-direction:column;justify-content:flex-end;
+ overflow:hidden;transition:transform .15s ease,filter .15s ease;font:inherit;text-decoration:none}
+.tile:active{transform:scale(.97);filter:brightness(.9)}
+.tile .ic{position:absolute;top:28px;left:30px;width:72px;height:72px}
+.tile .t{font-size:clamp(30px,4.2vw,44px);font-weight:700;letter-spacing:-.01em}
+.tile .s{font-size:clamp(16px,2vw,20px);opacity:.85;margin-top:6px}
+.pc{background:linear-gradient(150deg,var(--blue2),var(--blue) 55%,#1d4ed8)}
+.read{background:linear-gradient(150deg,var(--amber2),var(--amber) 55%,#b45309)}
+.toast{position:fixed;left:50%;bottom:max(36px,env(safe-area-inset-bottom));transform:translate(-50%,30px);opacity:0;pointer-events:none;
+ background:rgba(15,23,42,.95);border:1px solid var(--line);padding:16px 26px;border-radius:30px;font-size:19px;font-weight:600;transition:all .3s ease;white-space:nowrap}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:20px;z-index:10}
+.sheet{background:#13203a;border:1px solid var(--line);border-radius:24px;width:100%;max-width:560px;padding:26px}
+.sheet h2{margin:0 0 6px;font-size:26px}
+.sheet p{color:var(--muted);font-size:16px;margin:0 0 16px;line-height:1.45}
+.sheet label{display:block;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:7px}
+.sheet input{width:100%;font:inherit;font-size:19px;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:#0c172b;color:var(--text)}
+.row{display:flex;justify-content:flex-end;gap:10px;margin-top:20px}
+.btn{font:inherit;font-size:17px;font-weight:600;padding:12px 22px;border-radius:12px;border:0;cursor:pointer;background:var(--blue);color:#fff}
+.btn.ghost{background:var(--card);color:var(--text);border:1px solid var(--line)}
+.hidden{display:none!important}
+@media (orientation:portrait){.tiles{grid-template-columns:1fr;grid-template-rows:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+ <header>
+  <div><div class="date" id="date"></div><div class="greet" id="greet"></div></div>
+  <button class="gear" id="gear" aria-label="Settings">⚙︎</button>
+ </header>
+ <div class="clock" id="clock">--:--</div>
+ <div class="tiles">
+  <button class="tile pc" id="pcBtn">
+   <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v8"/><path d="M6.3 6.8a8 8 0 1 0 11.4 0"/></svg>
+   <div class="t">Turn on PC</div><div class="s">Wakes your computer over Wi-Fi</div>
+  </button>
+  <a class="tile read" id="readBtn" href="ibooks://">
+   <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5.5C4.5 4 8 4 12 6c4-2 7.5-2 10-.5v13c-2.5-1.5-6-1.5-10 .5-4-2-7.5-2-10-.5z"/><path d="M12 6v13"/></svg>
+   <div class="t">Read</div><div class="s">Opens your books</div>
+  </a>
+ </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal hidden" id="settings">
+ <div class="sheet">
+  <h2>Settings</h2>
+  <p>“Turn on PC” runs a shortcut in the Shortcuts app. Type its exact name here.</p>
+  <label for="scName">Shortcut name</label>
+  <input id="scName" type="text" autocomplete="off" autocorrect="off" spellcheck="false">
+  <div class="row"><button class="btn ghost" id="cancel">Cancel</button><button class="btn" id="save">Save</button></div>
+ </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  function get(k, d) { try { var v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } }
+  function set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  var shortcutName = get('room-shortcut', 'Wake PC');
+
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function tick() {
+    var d = new Date(), h = d.getHours();
+    $('clock').textContent = pad(h) + ':' + pad(d.getMinutes());
+    $('date').textContent = d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+    $('greet').textContent = h < 5 ? 'Good night' : h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+  }
+  tick(); setInterval(tick, 1000);
+
+  var toastTimer;
+  function toast(msg) {
+    $('toast').textContent = msg; $('toast').classList.add('show');
+    clearTimeout(toastTimer); toastTimer = setTimeout(function () { $('toast').classList.remove('show'); }, 3500);
+  }
+
+  $('pcBtn').onclick = function () {
+    toast('Waking your PC…');
+    setTimeout(function () {
+      location.href = 'shortcuts://run-shortcut?name=' + encodeURIComponent(shortcutName);
+    }, 250);
+  };
+
+  $('gear').onclick = function () { $('scName').value = shortcutName; $('settings').classList.remove('hidden'); };
+  $('cancel').onclick = function () { $('settings').classList.add('hidden'); };
+  $('save').onclick = function () {
+    var v = $('scName').value.trim();
+    if (v) { shortcutName = v; set('room-shortcut', v); }
+    $('settings').classList.add('hidden'); toast('Saved');
+  };
+})();
+</script>
+</body>
+</html>
