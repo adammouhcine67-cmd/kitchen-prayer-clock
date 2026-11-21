@@ -84,6 +84,11 @@ function New-HotkeyShortcut($name, $script, $hotkey) {
 New-HotkeyShortcut 'Get PC ready'        'get-ready.ps1'  'Ctrl+Alt+Shift+F9'
 New-HotkeyShortcut 'Launch Call of Duty' 'launch-cod.ps1' 'Ctrl+Alt+Shift+F10'
 New-HotkeyShortcut 'Open Chrome'         'open-chrome.ps1' 'Ctrl+Alt+Shift+F8'
+@"
+Add-Type -AssemblyName System.Windows.Forms
+[System.Windows.Forms.Application]::SetSuspendState('Suspend', `$false, `$false) | Out-Null
+"@ | Set-Content -Encoding UTF8 (Join-Path $dir 'sleep-pc.ps1')
+New-HotkeyShortcut 'Sleep PC'            'sleep-pc.ps1'   'Ctrl+Alt+Shift+F7'
 
 # 5. Power button = Sleep, and stop Windows waking up by itself (needs admin; skipped if not)
 & powercfg /setacvalueindex SCHEME_CURRENT SUB_BUTTONS PBUTTONACTION 1 2>$null | Out-Null; $ok1 = ($LASTEXITCODE -eq 0)
