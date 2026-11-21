@@ -48,7 +48,7 @@ else { Write-Host "[!] Chrome not found - 'Get PC ready' will only start Call of
 # 3. Write the two small action scripts
 $codCmd | Set-Content -Encoding UTF8 (Join-Path $dir 'launch-cod.ps1')
 
-@"
+$chromeScript = @"
 Add-Type -AssemblyName System.Windows.Forms
 `$chrome = '$($chrome -replace "'", "''")'
 if (`$chrome -and (Test-Path `$chrome)) {
@@ -60,6 +60,10 @@ if (`$chrome -and (Test-Path `$chrome)) {
         Start-Process `$chrome -ArgumentList "--new-window", "--start-maximized"
     }
 }
+"@
+$chromeScript | Set-Content -Encoding UTF8 (Join-Path $dir 'open-chrome.ps1')
+@"
+$chromeScript
 Start-Sleep -Seconds 2
 $codCmd
 "@ | Set-Content -Encoding UTF8 (Join-Path $dir 'get-ready.ps1')
@@ -79,6 +83,7 @@ function New-HotkeyShortcut($name, $script, $hotkey) {
 }
 New-HotkeyShortcut 'Get PC ready'        'get-ready.ps1'  'Ctrl+Alt+Shift+F9'
 New-HotkeyShortcut 'Launch Call of Duty' 'launch-cod.ps1' 'Ctrl+Alt+Shift+F10'
+New-HotkeyShortcut 'Open Chrome'         'open-chrome.ps1' 'Ctrl+Alt+Shift+F8'
 
 # 5. Power button = Sleep, and stop Windows waking up by itself (needs admin; skipped if not)
 & powercfg /setacvalueindex SCHEME_CURRENT SUB_BUTTONS PBUTTONACTION 1 2>$null | Out-Null; $ok1 = ($LASTEXITCODE -eq 0)
