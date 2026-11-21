@@ -13,19 +13,30 @@ Write-Host "=== PC Helper setup ===" -ForegroundColor Cyan
 # 1. Find the Call of Duty shortcut on the desktop
 $desktops = @([Environment]::GetFolderPath('Desktop'), [Environment]::GetFolderPath('CommonDesktopDirectory'),
               (Join-Path $env:USERPROFILE 'OneDrive\Desktop')) | Where-Object { $_ -and (Test-Path $_) } | Select-Object -Unique
-$items = foreach ($d in $desktops) { Get-ChildItem -LiteralPath $d -File -Force -ErrorAction SilentlyContinue }
-# ignore spaces, special spaces and symbols like (R) when matching the name
-$cod = $items | Where-Object {
-    $n = ($_.BaseName -replace '[^A-Za-z0-9]', '').ToLower()
-    $n -like '*callofduty*' -or $n -like '*blackops*'
-} | Sort-Object { if ($_.Extension -in '.lnk', '.url') { 0 } else { 1 } } | Select-Object -First 1
-if (-not $cod) {
-    Write-Host "Couldn't find a Call of Duty shortcut on your desktop." -ForegroundColor Red
-    Write-Host "These are the files I can see on your desktop:" -ForegroundColor Yellow
-    $items | ForEach-Object { Write-Host "   $($_.Name)" }
+function Test-CodName($s) { $n = ($s -replace '[^A-Za-z0-9]', '').ToLower(); $n -like '*callofduty*' -or $n -like '*blackops*' }
+
+# a) Xbox / Game Pass app in the Start menu (preferred)
+$codCmd = $null
+$app = Get-StartApps -ErrorAction SilentlyContinue | Where-Object { Test-CodName $_.Name } |
+       Sort-Object { if ($_.AppID -match '!') { 0 } else { 1 } } | Select-Object -First 1
+if ($app) {
+    $codCmd = "Start-Process explorer.exe -ArgumentList 'shell:AppsFolder\$($app.AppID)'"
+    Write-Host "[ok] Call of Duty app: $($app.Name)" -ForegroundColor Green
+} else {
+    # b) a shortcut on the desktop
+    $items = foreach ($d in $desktops) { Get-ChildItem -LiteralPath $d -File -Force -ErrorAction SilentlyContinue }
+    $cod = $items | Where-Object { Test-CodName $_.BaseName } | Select-Object -First 1
+    if ($cod) {
+        $codCmd = "Start-Process -FilePath '$($cod.FullName -replace "'", "''")'"
+        Write-Host "[ok] Call of Duty shortcut: $($cod.Name)" -ForegroundColor Green
+    }
+}
+if (-not $codCmd) {
+    Write-Host "Couldn't find Call of Duty." -ForegroundColor Red
+    Write-Host "Apps I can see with 'Call', 'Duty' or 'Xbox' in the name:" -ForegroundColor Yellow
+    Get-StartApps | Where-Object { $_.Name -match 'Call|Duty|Xbox|Ops' } | ForEach-Object { Write-Host "   $($_.Name)" }
     return
 }
-Write-Host "[ok] Call of Duty shortcut: $($cod.Name)" -ForegroundColor Green
 
 # 2. Find Chrome
 $chrome = @("$env:ProgramFiles\Google\Chrome\Application\chrome.exe",
@@ -35,10 +46,7 @@ if ($chrome) { Write-Host "[ok] Chrome found" -ForegroundColor Green }
 else { Write-Host "[!] Chrome not found - 'Get PC ready' will only start Call of Duty" -ForegroundColor Yellow }
 
 # 3. Write the two small action scripts
-$codPath = $cod.FullName
-@"
-Start-Process -FilePath '$($codPath -replace "'", "''")'
-"@ | Set-Content -Encoding UTF8 (Join-Path $dir 'launch-cod.ps1')
+$codCmd | Set-Content -Encoding UTF8 (Join-Path $dir 'launch-cod.ps1')
 
 @"
 Add-Type -AssemblyName System.Windows.Forms
@@ -53,7 +61,7 @@ if (`$chrome -and (Test-Path `$chrome)) {
     }
 }
 Start-Sleep -Seconds 2
-Start-Process -FilePath '$($codPath -replace "'", "''")'
+$codCmd
 "@ | Set-Content -Encoding UTF8 (Join-Path $dir 'get-ready.ps1')
 
 # 4. Start Menu shortcuts with key combos (Windows runs them when the keys are pressed)
