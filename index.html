@@ -150,7 +150,7 @@ main{flex:1;display:flex;align-items:center;min-height:0}
  <div class="sheet" style="max-width:460px;text-align:center">
   <h2 style="margin-bottom:18px">Adam's PC</h2>
   <button class="pc-big" id="pcReady" style="background:#2563eb">Get PC ready for Adam</button>
-  <button class="pc-big" id="pcCod" style="background:#16a34a">Launch Call of Duty</button>
+  <button class="pc-big" id="pcCod" style="background:#16a34a">Open Call of Duty and Chrome</button>
   <button class="pc-big" id="pcChrome" style="background:#9333ea">Open Chrome</button>
   <p class="hint" id="pcMsg" style="margin:14px 0 0;min-height:20px"></p>
   <button class="btn ghost" id="pcClose" style="margin-top:14px">Close</button>
@@ -667,7 +667,7 @@ function pcSend(a, msg) {
 $('openPc').onclick = function () { $('pcMsg').textContent = ''; $('pcSheet').classList.remove('hidden'); };
 $('pcClose').onclick = function () { $('pcSheet').classList.add('hidden'); };
 $('pcReady').onclick = function () { pcSend('ready', 'Done — the PC is getting ready.'); };
-$('pcCod').onclick = function () { pcSend('cod', 'Done — Call of Duty is starting.'); };
+$('pcCod').onclick = function () { pcSend('ready', 'Done — Call of Duty and Chrome are opening.'); };
 $('pcChrome').onclick = function () { pcSend('chrome', 'Done — Chrome is opening.'); };
 $('warnBanner').onclick = function () { if (player.src.indexOf('warn') >= 0) stopSound(); hideWarning(); };
 
