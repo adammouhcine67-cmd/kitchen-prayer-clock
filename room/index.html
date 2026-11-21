@@ -9,113 +9,349 @@
 <meta name="apple-mobile-web-app-title" content="My Room">
 <meta name="theme-color" content="#0a1222">
 <title>My Room</title>
-<style>
-:root{--bg1:#0a1222;--bg2:#0f2a3a;--card:rgba(255,255,255,.06);--line:rgba(255,255,255,.12);
- --text:#f1f5f9;--muted:#94a3b8;--blue:#3b82f6;--blue2:#60a5fa;--amber:#e8a33d;--amber2:#f6c86b}
-*{box-sizing:border-box}
-html,body{margin:0;height:100%;overflow:hidden;background:#0a1222}
-body{background:linear-gradient(160deg,var(--bg1),var(--bg2));color:var(--text);
- font-family:-apple-system,"SF Pro Display","Helvetica Neue",Helvetica,Arial,sans-serif;
- -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
-.app{display:flex;flex-direction:column;height:100%;padding:max(24px,env(safe-area-inset-top)) 32px max(28px,env(safe-area-inset-bottom))}
-header{display:flex;justify-content:space-between;align-items:flex-start}
-.date{font-size:24px;font-weight:600}
-.greet{font-size:18px;color:var(--muted);margin-top:4px}
-.gear{width:48px;height:48px;border-radius:24px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:22px;cursor:pointer}
-.clock{font-size:clamp(90px,15vw,170px);font-weight:200;letter-spacing:-.04em;line-height:1;margin:clamp(16px,4vh,48px) 0 clamp(20px,5vh,56px);font-variant-numeric:tabular-nums}
-.tiles{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:24px;min-height:0}
-.tile{position:relative;border:0;border-radius:32px;padding:32px;text-align:left;color:#fff;cursor:pointer;display:flex;flex-direction:column;justify-content:flex-end;
- overflow:hidden;transition:transform .15s ease,filter .15s ease;font:inherit;text-decoration:none}
-.tile:active{transform:scale(.97);filter:brightness(.9)}
-.tile .ic{position:absolute;top:28px;left:30px;width:72px;height:72px}
-.tile .t{font-size:clamp(30px,4.2vw,44px);font-weight:700;letter-spacing:-.01em}
-.tile .s{font-size:clamp(16px,2vw,20px);opacity:.85;margin-top:6px}
-.pc{background:linear-gradient(150deg,var(--blue2),var(--blue) 55%,#1d4ed8)}
-.read{background:linear-gradient(150deg,var(--amber2),var(--amber) 55%,#b45309)}
-.toast{position:fixed;left:50%;bottom:max(36px,env(safe-area-inset-bottom));transform:translate(-50%,30px);opacity:0;pointer-events:none;
- background:rgba(15,23,42,.95);border:1px solid var(--line);padding:16px 26px;border-radius:30px;font-size:19px;font-weight:600;transition:all .3s ease;white-space:nowrap}
-.toast.show{opacity:1;transform:translate(-50%,0)}
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:20px;z-index:10}
-.sheet{background:#13203a;border:1px solid var(--line);border-radius:24px;width:100%;max-width:560px;padding:26px}
-.sheet h2{margin:0 0 6px;font-size:26px}
-.sheet p{color:var(--muted);font-size:16px;margin:0 0 16px;line-height:1.45}
-.sheet label{display:block;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:7px}
-.sheet input{width:100%;font:inherit;font-size:19px;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:#0c172b;color:var(--text)}
-.row{display:flex;justify-content:flex-end;gap:10px;margin-top:20px}
-.btn{font:inherit;font-size:17px;font-weight:600;padding:12px 22px;border-radius:12px;border:0;cursor:pointer;background:var(--blue);color:#fff}
-.btn.ghost{background:var(--card);color:var(--text);border:1px solid var(--line)}
-.hidden{display:none!important}
-@media (orientation:portrait){.tiles{grid-template-columns:1fr;grid-template-rows:1fr 1fr}}
-</style>
+<link rel="stylesheet" href="room.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.js"></script>
 </head>
-<body>
+<body data-mode="none">
+
+<div class="bg">
+ <div class="bg-none"></div>
+ <div class="bg-gaming"><div class="sun"></div><div class="horizon"></div><div class="grid"></div></div>
+ <div class="bg-study"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
+ <div class="bg-sleep"><div class="stars"></div><div class="moon"></div></div>
+</div>
+
 <div class="app">
  <header>
-  <div><div class="date" id="date"></div><div class="greet" id="greet"></div></div>
-  <button class="gear" id="gear" aria-label="Settings">⚙︎</button>
+  <div class="date" id="date"></div>
+  <div class="hdr-right">
+   <div class="pill" id="pcPill"><i></i><span id="pcPillT">PC</span></div>
+   <button class="round" id="openSettings" aria-label="Settings">⚙︎</button>
+  </div>
  </header>
- <div class="clock" id="clock">--:--</div>
- <div class="tiles">
-  <button class="tile pc" id="pcBtn">
-   <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v8"/><path d="M6.3 6.8a8 8 0 1 0 11.4 0"/></svg>
-   <div class="t">Turn on PC</div><div class="s">Wakes your computer over Wi-Fi</div>
-  </button>
-  <a class="tile read" id="readBtn" href="ibooks://">
-   <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5.5C4.5 4 8 4 12 6c4-2 7.5-2 10-.5v13c-2.5-1.5-6-1.5-10 .5-4-2-7.5-2-10-.5z"/><path d="M12 6v13"/></svg>
-   <div class="t">Read</div><div class="s">Opens your books</div>
-  </a>
- </div>
+ <main>
+  <section class="left">
+   <div class="clock" id="clock">--:--</div>
+   <div class="weather" id="weather"></div>
+   <div class="chips" id="chips"></div>
+  </section>
+  <section class="right">
+   <div class="label">Room mode</div>
+   <div class="modes">
+    <button class="mode gaming" data-mode="gaming"><span class="e">🎮</span><span><div class="t">Gaming</div><div class="s">Wakes PC · Chrome + Call of Duty</div></span></button>
+    <button class="mode study" data-mode="study"><span class="e">📖</span><span><div class="t">Study</div><div class="s">Wakes PC · opens Chrome · calm</div></span></button>
+    <button class="mode sleep" data-mode="sleep"><span class="e">🌙</span><span><div class="t">Sleep</div><div class="s">Puts the PC to sleep · dark screen</div></span></button>
+   </div>
+   <div class="tools">
+    <button class="tool" id="tPc"><span class="e">🖥️</span>PC</button>
+    <button class="tool" id="tAlarm"><span class="e">⏰</span>Alarms</button>
+    <button class="tool" id="tTimer"><span class="e">⏱️</span>Timer</button>
+    <button class="tool" id="tIntercom"><span class="e">📢</span>Intercom</button>
+   </div>
+  </section>
+ </main>
 </div>
 
+<!-- PC sheet -->
+<div class="modal hidden" id="pcSheet"><div class="sheet">
+ <h2>🖥️ PC</h2>
+ <button class="big" style="background:#2563eb" data-pc="ready">Get PC ready<small>Wake up, sign in, Chrome + Call of Duty</small></button>
+ <button class="big" style="background:#16a34a" data-pc="cod">Call of Duty<small>Launch the game</small></button>
+ <button class="big" style="background:#9333ea" data-pc="chrome">Chrome<small>Opens on the 2nd monitor</small></button>
+ <button class="big" style="background:#334155" data-pc="sleep">Sleep PC<small>Puts the PC to sleep</small></button>
+ <button class="btn ghost close" data-close>Close</button>
+</div></div>
+
+<!-- Alarms sheet -->
+<div class="modal hidden" id="alarmSheet"><div class="sheet">
+ <h2>⏰ Alarms</h2>
+ <div class="row"><input type="time" id="alarmTime" value="07:00"><input type="text" id="alarmLabel" placeholder="Label (optional)" style="flex:1"><button class="btn" id="addAlarm">Add</button></div>
+ <ul class="list" id="alarmList"></ul>
+ <p class="hint">Alarms ring every day at that time while this page is open. Keep the iPad plugged in with Auto-Lock off.</p>
+ <button class="btn ghost close" data-close>Close</button>
+</div></div>
+
+<!-- Timer sheet -->
+<div class="modal hidden" id="timerSheet"><div class="sheet">
+ <h2>⏱️ Timer</h2>
+ <div class="presets" id="presets"></div>
+ <div class="row"><input type="number" id="customMin" min="1" max="600" placeholder="Minutes" style="flex:1"><button class="btn" id="startCustom">Start</button></div>
+ <ul class="list" id="timerList"></ul>
+ <button class="btn ghost close" data-close>Close</button>
+</div></div>
+
+<!-- Settings sheet -->
+<div class="modal hidden" id="setSheet"><div class="sheet">
+ <h2>Settings</h2>
+ <div class="label" style="margin:0 0 8px">City for the weather</div>
+ <div class="row"><input type="text" id="cityInput" placeholder="Type a city" style="flex:1"><button class="btn" id="citySearch">Search</button></div>
+ <div class="results" id="cityResults"></div>
+ <p class="hint" id="cityNow"></p>
+ <div class="label" style="margin:18px 0 8px">Clock</div>
+ <div class="row"><button class="btn ghost" id="fmt24">24-hour</button><button class="btn ghost" id="fmt12">12-hour</button></div>
+ <button class="btn ghost close" data-close>Close</button>
+</div></div>
+
+<!-- Intercom (runs all the time in the background) -->
+<div class="modal hidden" id="icSheet" style="padding:0;background:#0f1218">
+ <iframe id="icFrame" title="Intercom" allow="microphone; autoplay" style="border:0;width:100%;height:100%"></iframe>
+</div>
+
+<!-- Ringing -->
+<div class="ring hidden" id="ring">
+ <div class="rt pulse" id="ringTitle">Alarm</div>
+ <div class="rc" id="ringClock"></div>
+ <div class="row"><button class="btn ghost" id="snooze">Snooze 5 min</button><button class="btn" id="stopRing">Stop</button></div>
+</div>
+
+<div class="tapnote" id="tapnote">Tap anywhere to turn on sounds</div>
 <div class="toast" id="toast"></div>
-
-<div class="modal hidden" id="settings">
- <div class="sheet">
-  <h2>Settings</h2>
-  <p>“Turn on PC” runs a shortcut in the Shortcuts app. Type its exact name here.</p>
-  <label for="scName">Shortcut name</label>
-  <input id="scName" type="text" autocomplete="off" autocorrect="off" spellcheck="false">
-  <div class="row"><button class="btn ghost" id="cancel">Cancel</button><button class="btn" id="save">Save</button></div>
- </div>
-</div>
+<audio id="player" preload="auto"></audio>
 
 <script>
 (function () {
   'use strict';
   var $ = function (id) { return document.getElementById(id); };
-  function get(k, d) { try { var v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } }
-  function set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
-  var shortcutName = get('room-shortcut', 'Wake PC');
-
+  function store(k, v) { try { if (v === undefined) return JSON.parse(localStorage.getItem(k)); localStorage.setItem(k, JSON.stringify(v)); } catch (e) { return null; } }
   function pad(n) { return (n < 10 ? '0' : '') + n; }
+
+  // ---------- settings ----------
+  var S = Object.assign({ city: '', lat: null, lng: null, h24: true, mode: 'none' }, store('room-settings') || {});
+  function saveS() { store('room-settings', S); }
+
+  // ---------- toast ----------
+  var tt; function toast(m) { $('toast').textContent = m; $('toast').classList.add('show'); clearTimeout(tt); tt = setTimeout(function () { $('toast').classList.remove('show'); }, 3500); }
+
+  // ---------- clock ----------
+  function fmt(d, sec) {
+    var h = d.getHours(), m = pad(d.getMinutes());
+    if (S.h24) return pad(h) + ':' + m + (sec ? '<small>' + pad(d.getSeconds()) + '</small>' : '');
+    return (h % 12 || 12) + ':' + m + (sec ? '<small>' + (h < 12 ? 'AM' : 'PM') + '</small>' : ' ' + (h < 12 ? 'AM' : 'PM'));
+  }
+
+  // ---------- PC (through the PC Helper / ESP32) ----------
+  var SB_URL = 'https://kughalejiydqtseuyrni.supabase.co';
+  var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt1Z2hhbGVqaXlkcXRzZXV5cm5pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2MzY1NTAsImV4cCI6MjA5NjIxMjU1MH0.Eti8hM2qhHJnhaDmzVR0I2K7zOEiK8H2KEBJeWJiLE8';
+  var pcChan = null, pcOnline = false, pcAwake = false, pcSeen = 0, waiting = {};
+  function pcConnect() {
+    if (!window.supabase) return;
+    var sb = window.supabase.createClient(SB_URL, SB_KEY);
+    pcChan = sb.channel('home-pc', { config: { broadcast: { self: false } } });
+    pcChan.on('broadcast', { event: 'pc-status' }, function (m) {
+      var p = m.payload || {}; pcSeen = Date.now(); pcAwake = !!p.bt;
+      if (p.ack && waiting[p.ack]) { clearTimeout(waiting[p.ack]); delete waiting[p.ack]; }
+      pcPill();
+    });
+    pcChan.subscribe(function (st) { pcOnline = st === 'SUBSCRIBED'; if (pcOnline) pcChan.send({ type: 'broadcast', event: 'pc', payload: { a: 'status' } }); pcPill(); });
+  }
+  function pcPill() {
+    var fresh = Date.now() - pcSeen < 45000;
+    $('pcPill').classList.toggle('on', fresh && pcAwake);
+    $('pcPillT').textContent = !pcOnline ? 'PC: offline' : !fresh ? 'PC helper: not seen' : pcAwake ? 'PC on' : 'PC asleep';
+  }
+  setInterval(function () { if (pcOnline && pcChan) pcChan.send({ type: 'broadcast', event: 'pc', payload: { a: 'status' } }); pcPill(); }, 20000);
+  var PC_MSG = { ready: 'Getting your PC ready…', cod: 'Launching Call of Duty…', chrome: 'Opening Chrome…', sleep: 'Putting the PC to sleep…', study: 'Opening Chrome…' };
+  function pcSend(a) {
+    if (!pcChan || !pcOnline) { toast("Can't reach the PC helper"); return; }
+    var id = Math.random().toString(36).slice(2, 8);
+    pcChan.send({ type: 'broadcast', event: 'pc', payload: { a: a, id: id } });
+    toast(PC_MSG[a] || 'Sent');
+    waiting[id] = setTimeout(function () { delete waiting[id]; toast("The PC helper didn't answer"); }, 6000);
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('[data-pc]'), function (b) {
+    b.onclick = function () { pcSend(b.getAttribute('data-pc')); closeSheets(); };
+  });
+
+  // ---------- room modes ----------
+  var MODE_PC = { gaming: 'ready', study: 'study', sleep: 'sleep' };
+  function setMode(m, send) {
+    S.mode = (S.mode === m && !send) ? 'none' : m; saveS();
+    document.body.setAttribute('data-mode', S.mode);
+    Array.prototype.forEach.call(document.querySelectorAll('.mode'), function (b) { b.classList.toggle('active', b.getAttribute('data-mode') === S.mode); });
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('.mode'), function (b) {
+    b.onclick = function () { var m = b.getAttribute('data-mode'); setMode(m, true); pcSend(MODE_PC[m]); };
+  });
+  setMode(S.mode, true);
+
+  // ---------- weather ----------
+  function wx(c, day) {
+    if (c === 0) return [day ? '☀️' : '🌙', 'Clear']; if (c === 1) return [day ? '🌤️' : '🌙', 'Mostly clear']; if (c === 2) return ['⛅️', 'Partly cloudy'];
+    if (c === 3) return ['☁️', 'Cloudy']; if (c === 45 || c === 48) return ['🌫️', 'Fog']; if (c >= 51 && c <= 57) return ['🌦️', 'Drizzle'];
+    if (c >= 61 && c <= 67) return ['🌧️', 'Rain']; if (c >= 71 && c <= 77) return ['🌨️', 'Snow']; if (c >= 80 && c <= 82) return ['🌦️', 'Showers'];
+    if (c >= 85 && c <= 86) return ['🌨️', 'Snow showers']; if (c >= 95) return ['⛈️', 'Thunderstorm']; return ['🌡️', ''];
+  }
+  function renderWeather(j) {
+    if (!j || !j.current) { $('weather').innerHTML = S.lat === null ? '<span class="wd">Tap ⚙︎ to choose your city for the weather</span>' : ''; return; }
+    var c = j.current, d = j.daily, i = wx(c.weather_code, c.is_day);
+    $('weather').innerHTML = '<span class="wi">' + i[0] + '</span><span class="wt">' + Math.round(c.temperature_2m) + '°</span><span class="wd">' + i[1] +
+      (d ? '<br>' + Math.round(d.temperature_2m_max[0]) + '° / ' + Math.round(d.temperature_2m_min[0]) + '°' + (d.precipitation_probability_max ? ' · rain ' + d.precipitation_probability_max[0] + '%' : '') : '') + '</span>';
+  }
+  function loadWeather() {
+    if (S.lat === null) { renderWeather(null); return; }
+    fetch('https://api.open-meteo.com/v1/forecast?latitude=' + S.lat + '&longitude=' + S.lng +
+      '&current=temperature_2m,weather_code,is_day&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&forecast_days=1')
+      .then(function (r) { return r.json(); }).then(function (j) { store('room-weather', j); renderWeather(j); })
+      .catch(function () { renderWeather(store('room-weather')); });
+  }
+
+  // ---------- sound ----------
+  var player = $('player'), unlocked = false, ringURI;
+  function makeChime() {
+    var sr = 22050, n = Math.floor(sr * 2.6), buf = new ArrayBuffer(44 + n * 2), dv = new DataView(buf), i, j;
+    function ws(o, s) { for (var k = 0; k < s.length; k++) dv.setUint8(o + k, s.charCodeAt(k)); }
+    ws(0, 'RIFF'); dv.setUint32(4, 36 + n * 2, true); ws(8, 'WAVE'); ws(12, 'fmt '); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true);
+    dv.setUint16(22, 1, true); dv.setUint32(24, sr, true); dv.setUint32(28, sr * 2, true); dv.setUint16(32, 2, true); dv.setUint16(34, 16, true);
+    ws(36, 'data'); dv.setUint32(40, n * 2, true);
+    var notes = [[0, 880], [0.3, 1108.7], [0.6, 1318.5], [1.3, 880], [1.6, 1108.7], [1.9, 1318.5]];
+    for (i = 0; i < n; i++) {
+      var t = i / sr, v = 0;
+      for (j = 0; j < notes.length; j++) { var dt = t - notes[j][0]; if (dt < 0) continue; v += Math.exp(-dt * 4) * Math.min(1, dt * 300) * Math.sin(2 * Math.PI * notes[j][1] * dt); }
+      dv.setInt16(44 + i * 2, Math.max(-1, Math.min(1, v * 0.4)) * 32767, true);
+    }
+    var bytes = new Uint8Array(buf), bin = '';
+    for (i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, Array.prototype.slice.call(bytes.subarray(i, i + 0x8000)));
+    return 'data:audio/wav;base64,' + btoa(bin);
+  }
+  ringURI = makeChime();
+  player.src = ringURI;
+  function unlock() {
+    if (unlocked) return; unlocked = true; $('tapnote').classList.add('hidden');
+    player.muted = true;
+    var p = player.play();
+    var after = function () { if (player.muted) { player.pause(); player.currentTime = 0; player.muted = false; } };
+    if (p && p.then) p.then(after, function () { player.muted = false; }); else after();
+  }
+  document.addEventListener('touchend', unlock, { passive: true });
+  document.addEventListener('click', unlock);
+  player.loop = true;
+  function startRing(title) {
+    $('ringTitle').textContent = title; $('ring').classList.remove('hidden');
+    player.muted = false; player.currentTime = 0; var p = player.play(); if (p && p.catch) p.catch(function () {});
+    clearTimeout(startRing.t); startRing.t = setTimeout(stopRing, 5 * 60 * 1000);
+  }
+  function stopRing() { player.pause(); player.currentTime = 0; $('ring').classList.add('hidden'); clearTimeout(startRing.t); }
+  $('stopRing').onclick = stopRing;
+  $('snooze').onclick = function () { stopRing(); timers.push({ id: Date.now(), end: Date.now() + 5 * 60000, label: 'Snooze' }); saveTimers(); renderTimers(); };
+
+  // ---------- alarms ----------
+  var alarms = store('room-alarms') || [];
+  function saveAlarms() { store('room-alarms', alarms); }
+  function renderAlarms() {
+    var ul = $('alarmList'); ul.innerHTML = '';
+    alarms.sort(function (a, b) { return a.t < b.t ? -1 : 1; }).forEach(function (a) {
+      var li = document.createElement('li'); if (!a.on) li.className = 'off';
+      var hm = a.t.split(':'), d = new Date(); d.setHours(+hm[0], +hm[1]);
+      li.innerHTML = '<span class="tm"></span><span class="lb"></span><button class="switch' + (a.on ? ' on' : '') + '"></button><button class="del">✕</button>';
+      li.querySelector('.tm').textContent = fmt(d, false); li.querySelector('.lb').textContent = a.label || '';
+      li.querySelector('.switch').onclick = function () { a.on = !a.on; saveAlarms(); renderAlarms(); };
+      li.querySelector('.del').onclick = function () { alarms = alarms.filter(function (x) { return x !== a; }); saveAlarms(); renderAlarms(); };
+      ul.appendChild(li);
+    });
+    renderChips();
+  }
+  $('addAlarm').onclick = function () {
+    var t = $('alarmTime').value; if (!t) return;
+    alarms.push({ id: Date.now(), t: t, label: $('alarmLabel').value.trim(), on: true }); $('alarmLabel').value = '';
+    saveAlarms(); renderAlarms(); toast('Alarm set for ' + t);
+  };
+
+  // ---------- timers ----------
+  var timers = store('room-timers') || [];
+  function saveTimers() { store('room-timers', timers); }
+  [1, 5, 10, 15, 25, 45].forEach(function (m) {
+    var b = document.createElement('button'); b.textContent = m + ' min';
+    b.onclick = function () { addTimer(m); }; $('presets').appendChild(b);
+  });
+  function addTimer(min) { timers.push({ id: Date.now(), end: Date.now() + min * 60000, label: min + ' min' }); saveTimers(); renderTimers(); toast(min + ' minute timer started'); }
+  $('startCustom').onclick = function () { var m = parseFloat($('customMin').value); if (m > 0) { addTimer(m); $('customMin').value = ''; } };
+  function left(ms) { var s = Math.max(0, Math.ceil(ms / 1000)), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60); return (h ? h + ':' + pad(m) : m) + ':' + pad(s % 60); }
+  function renderTimers() {
+    var ul = $('timerList'); ul.innerHTML = '';
+    timers.forEach(function (t) {
+      var li = document.createElement('li');
+      li.innerHTML = '<span class="tm"></span><span class="lb"></span><button class="del">✕</button>';
+      li.querySelector('.tm').textContent = left(t.end - Date.now()); li.querySelector('.lb').textContent = t.label;
+      li.querySelector('.del').onclick = function () { timers = timers.filter(function (x) { return x !== t; }); saveTimers(); renderTimers(); };
+      ul.appendChild(li);
+    });
+    renderChips();
+  }
+  function renderChips() {
+    var box = $('chips'); box.innerHTML = '';
+    timers.forEach(function (t) { var c = document.createElement('div'); c.className = 'chip'; c.innerHTML = '⏱️ <b>' + left(t.end - Date.now()) + '</b>'; c.onclick = function () { openSheet('timerSheet'); }; box.appendChild(c); });
+    var next = nextAlarm();
+    if (next) { var c = document.createElement('div'); c.className = 'chip'; c.innerHTML = '⏰ <b></b>'; c.querySelector('b').textContent = next; c.onclick = function () { openSheet('alarmSheet'); }; box.appendChild(c); }
+  }
+  function nextAlarm() {
+    var on = alarms.filter(function (a) { return a.on; }); if (!on.length) return '';
+    var now = new Date(), nowM = now.getHours() * 60 + now.getMinutes(), best = null;
+    on.forEach(function (a) { var hm = a.t.split(':'), m = +hm[0] * 60 + +hm[1]; var diff = (m - nowM + 1440) % 1440 || 1440; if (!best || diff < best.diff) best = { a: a, diff: diff }; });
+    var d = new Date(); var hm2 = best.a.t.split(':'); d.setHours(+hm2[0], +hm2[1]); return fmt(d, false);
+  }
+
+  // ---------- tick ----------
+  var lastMinuteKey = '';
   function tick() {
-    var d = new Date(), h = d.getHours();
-    $('clock').textContent = pad(h) + ':' + pad(d.getMinutes());
+    var d = new Date();
+    $('clock').innerHTML = fmt(d, true);
     $('date').textContent = d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
-    $('greet').textContent = h < 5 ? 'Good night' : h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+    var key = d.toDateString() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    if (key !== lastMinuteKey) {
+      lastMinuteKey = key;
+      var hm = pad(d.getHours()) + ':' + pad(d.getMinutes());
+      alarms.forEach(function (a) { if (a.on && a.t === hm) startRing('⏰ ' + (a.label || 'Alarm')); });
+      if (d.getMinutes() % 15 === 0) loadWeather();
+    }
+    var now = Date.now(), done = timers.filter(function (t) { return t.end <= now; });
+    if (done.length) { timers = timers.filter(function (t) { return t.end > now; }); saveTimers(); startRing('⏱️ Timer done (' + done[0].label + ')'); }
+    if (timers.length || done.length) renderTimers();
   }
+
+  // ---------- sheets ----------
+  function openSheet(id) { closeSheets(); $(id).classList.remove('hidden'); }
+  function closeSheets() { Array.prototype.forEach.call(document.querySelectorAll('.modal:not(#icSheet)'), function (m) { m.classList.add('hidden'); }); }
+  Array.prototype.forEach.call(document.querySelectorAll('[data-close]'), function (b) { b.onclick = closeSheets; });
+  Array.prototype.forEach.call(document.querySelectorAll('.modal:not(#icSheet)'), function (m) { m.addEventListener('click', function (e) { if (e.target === m) closeSheets(); }); });
+  $('tPc').onclick = function () { openSheet('pcSheet'); };
+  $('tAlarm').onclick = function () { renderAlarms(); openSheet('alarmSheet'); };
+  $('tTimer').onclick = function () { renderTimers(); openSheet('timerSheet'); };
+  $('openSettings').onclick = function () { $('cityNow').textContent = S.city ? '📍 ' + S.city : ''; openSheet('setSheet'); };
+  $('fmt24').onclick = function () { S.h24 = true; saveS(); tick(); renderAlarms(); toast('24-hour clock'); };
+  $('fmt12').onclick = function () { S.h24 = false; saveS(); tick(); renderAlarms(); toast('12-hour clock'); };
+  function searchCity() {
+    var q = $('cityInput').value.trim(); if (!q) return;
+    $('cityResults').innerHTML = '<p class="hint">Searching…</p>';
+    fetch('https://geocoding-api.open-meteo.com/v1/search?count=5&language=en&name=' + encodeURIComponent(q)).then(function (r) { return r.json(); }).then(function (j) {
+      var box = $('cityResults'); box.innerHTML = '';
+      (j.results || []).forEach(function (c) {
+        var b = document.createElement('button'); b.textContent = c.name + ' — ' + [c.admin1, c.country].filter(Boolean).join(', ');
+        b.onclick = function () { S.city = c.name; S.lat = c.latitude; S.lng = c.longitude; saveS(); box.innerHTML = ''; $('cityNow').textContent = '📍 ' + c.name; loadWeather(); toast('Weather set to ' + c.name); };
+        box.appendChild(b);
+      });
+      if (!box.childNodes.length) box.innerHTML = '<p class="hint">No match — try another spelling.</p>';
+    }).catch(function () { $('cityResults').innerHTML = '<p class="hint">No internet?</p>'; });
+  }
+  $('citySearch').onclick = searchCity;
+  $('cityInput').onkeydown = function (e) { if (e.key === 'Enter') searchCity(); };
+
+  // ---------- intercom (always running inside a hidden frame) ----------
+  var ic = $('icSheet'), icStarted = false;
+  $('icFrame').src = '../intercom/?room=adam';
+  ic.classList.remove('hidden');                       // first time: show it so you can tap "Tap to start"
+  $('tIntercom').onclick = function () { ic.classList.remove('hidden'); };
+  window.addEventListener('message', function (e) {
+    var d = e.data || {};
+    if (d.intercom === 'started') { icStarted = true; unlock(); ic.classList.add('hidden'); toast(d.voice ? 'Intercom ready' : 'Intercom ready (messages only)'); }
+    else if (d.intercom === 'close') ic.classList.add('hidden');
+    else if (d.intercom === 'incoming') ic.classList.remove('hidden');
+  });
+
+  // ---------- start ----------
+  renderWeather(store('room-weather')); loadWeather();
+  renderAlarms(); renderTimers();
   tick(); setInterval(tick, 1000);
-
-  var toastTimer;
-  function toast(msg) {
-    $('toast').textContent = msg; $('toast').classList.add('show');
-    clearTimeout(toastTimer); toastTimer = setTimeout(function () { $('toast').classList.remove('show'); }, 3500);
-  }
-
-  $('pcBtn').onclick = function () {
-    toast('Waking your PC…');
-    setTimeout(function () {
-      location.href = 'shortcuts://run-shortcut?name=' + encodeURIComponent(shortcutName);
-    }, 250);
-  };
-
-  $('gear').onclick = function () { $('scName').value = shortcutName; $('settings').classList.remove('hidden'); };
-  $('cancel').onclick = function () { $('settings').classList.add('hidden'); };
-  $('save').onclick = function () {
-    var v = $('scName').value.trim();
-    if (v) { shortcutName = v; set('room-shortcut', v); }
-    $('settings').classList.add('hidden'); toast('Saved');
-  };
+  pcConnect();
 })();
 </script>
 </body>
