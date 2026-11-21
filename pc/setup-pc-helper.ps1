@@ -13,11 +13,16 @@ Write-Host "=== PC Helper setup ===" -ForegroundColor Cyan
 # 1. Find the Call of Duty shortcut on the desktop
 $desktops = @([Environment]::GetFolderPath('Desktop'), [Environment]::GetFolderPath('CommonDesktopDirectory'),
               (Join-Path $env:USERPROFILE 'OneDrive\Desktop')) | Where-Object { $_ -and (Test-Path $_) } | Select-Object -Unique
-$cod = Get-ChildItem -Path $desktops -Include *.lnk, *.url -File -Recurse -Depth 0 -ErrorAction SilentlyContinue |
-       Where-Object { $_.BaseName -match 'Call of Duty|Black Ops|COD' } | Select-Object -First 1
+$items = foreach ($d in $desktops) { Get-ChildItem -LiteralPath $d -File -Force -ErrorAction SilentlyContinue }
+# ignore spaces, special spaces and symbols like (R) when matching the name
+$cod = $items | Where-Object {
+    $n = ($_.BaseName -replace '[^A-Za-z0-9]', '').ToLower()
+    $n -like '*callofduty*' -or $n -like '*blackops*'
+} | Sort-Object { if ($_.Extension -in '.lnk', '.url') { 0 } else { 1 } } | Select-Object -First 1
 if (-not $cod) {
     Write-Host "Couldn't find a Call of Duty shortcut on your desktop." -ForegroundColor Red
-    Write-Host "Put the Call of Duty shortcut on your desktop, then run this again." -ForegroundColor Red
+    Write-Host "These are the files I can see on your desktop:" -ForegroundColor Yellow
+    $items | ForEach-Object { Write-Host "   $($_.Name)" }
     return
 }
 Write-Host "[ok] Call of Duty shortcut: $($cod.Name)" -ForegroundColor Green
