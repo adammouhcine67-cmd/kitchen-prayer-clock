@@ -62,6 +62,10 @@ main{flex:1;display:flex;align-items:center;min-height:0}
 .sound-banner{position:fixed;left:50%;top:92px;-webkit-transform:translateX(-50%);transform:translateX(-50%);
  background:rgba(232,194,106,.95);color:var(--ink);font-size:17px;font-weight:600;padding:12px 22px;border-radius:30px;white-space:nowrap;
  box-shadow:0 8px 30px rgba(0,0,0,.4)}
+.warn-banner{position:fixed;left:50%;top:84px;z-index:15;-webkit-transform:translateX(-50%);transform:translateX(-50%);
+ background:#13203a;border:2px solid var(--gold);color:var(--gold2);font-size:26px;font-weight:600;padding:16px 30px;border-radius:40px;
+ white-space:nowrap;box-shadow:0 10px 40px rgba(0,0,0,.5);cursor:pointer}
+.warn-banner .x{margin-left:14px;color:var(--muted);font-size:22px}
 .hidden{display:none!important}
 /* alarm */
 .alarm{position:fixed;top:0;left:0;right:0;bottom:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -129,6 +133,8 @@ main{flex:1;display:flex;align-items:center;min-height:0}
  <div class="prayers" id="prayers"></div>
 </div>
 
+<div class="warn-banner hidden" id="warnBanner"><span class="pulse">🕐</span> <span id="warnText"></span> <span class="x">✕</span></div>
+
 <div class="sound-banner" id="soundBanner">🔇 Tap anywhere to turn on the prayer alarm sound</div>
 
 <div class="alarm hidden" id="alarm">
@@ -158,17 +164,18 @@ main{flex:1;display:flex;align-items:center;min-height:0}
   </div>
   <div class="row grid2">
    <div><label class="l">Temperature</label><select id="unit"><option value="C">°C</option><option value="F">°F</option></select></div>
-   <div><label class="l">Alarm sound</label><select id="sound"><option value="chime">Gentle chime</option><option value="adhan">Adhan (adhan.mp3)</option></select></div>
+   <div><label class="l">Alarm sound</label><select id="sound"><option value="adhan">Adhan</option><option value="chime">Gentle chime</option></select></div>
   </div>
   <div class="row">
    <label class="l">Prayers</label>
-   <table class="ptable" id="ptable"><tr><th>Prayer</th><th>Alarm</th><th>Adjust (min)</th></tr></table>
-   <p class="hint" style="margin:8px 0 0">Use “Adjust” to match your local mosque's timetable, e.g. +2 or −3.</p>
+   <table class="ptable" id="ptable"><tr><th>Prayer</th><th>Adhan</th><th>5-min warning</th><th>Adjust (min)</th></tr></table>
+   <p class="hint" style="margin:8px 0 0">“5-min warning” says “Prayer time in five minutes” — time for wudu. Use “Adjust” to match your local mosque's timetable, e.g. +2 or −3.</p>
   </div>
   <div class="actions">
    <button class="btn ghost" id="testSound">▶︎ Test sound</button>
    <button class="btn" id="saveSettings">Save</button>
   </div>
+  <p class="hint" style="margin:18px 0 0;font-size:13px">Adhan recording: Sabah Fakhri, public domain, via Wikimedia Commons.</p>
  </div>
 </div>
 
@@ -205,8 +212,9 @@ var METHODS = {
 var HIJRI_MONTHS = ['Muharram', 'Safar', 'Rabi al-Awwal', 'Rabi al-Thani', 'Jumada al-Ula', 'Jumada al-Akhirah',
   'Rajab', "Sha'ban", 'Ramadan', 'Shawwal', "Dhu al-Qi'dah", 'Dhu al-Hijjah'];
 var DEFAULTS = {
-  city: '', lat: null, lng: null, method: 'MWL', asr: 1, h24: true, unit: 'C', sound: 'chime',
+  city: '', lat: null, lng: null, method: 'MWL', asr: 1, h24: true, unit: 'C', sound: 'adhan', adhanV: 1,
   alarms: { fajr: true, dhuhr: true, asr: true, maghrib: true, isha: true },
+  warn: { fajr: false, dhuhr: true, asr: true, maghrib: true, isha: true },
   adj: { fajr: 0, sunrise: 0, dhuhr: 0, asr: 0, maghrib: 0, isha: 0 }
 };
 
@@ -220,6 +228,10 @@ function loadSettings() {
   for (k in s) if (s.hasOwnProperty(k)) out[k] = s[k];
   for (k in DEFAULTS.alarms) if (out.alarms[k] === undefined) out.alarms[k] = DEFAULTS.alarms[k];
   for (k in DEFAULTS.adj) if (out.adj[k] === undefined) out.adj[k] = 0;
+  if (!out.warn) out.warn = {};
+  for (k in DEFAULTS.warn) if (out.warn[k] === undefined) out.warn[k] = DEFAULTS.warn[k];
+  // one-time switch to the adhan now that adhan.mp3 is included
+  if (!s.adhanV) { out.sound = 'adhan'; out.adhanV = 1; store('kpc-settings', out); }
   return out;
 }
 var S = loadSettings();
@@ -402,11 +414,12 @@ function tick() {
     if (el.className !== cls) el.className = cls;
   });
 
-  // alarms
+  // 5-minute warnings and adhan alarms
   today.forEach(function (p) {
-    if (p.sun || !S.alarms[p.k]) return;
-    var diff = t - p.time.getTime(), key = todayKey + p.k;
-    if (diff >= 0 && diff < 120000 && !fired[key]) { fired[key] = true; startAlarm(p); }
+    if (p.sun) return;
+    var pt = p.time.getTime(), w = pt - WARN_MS;
+    if (S.warn[p.k] && t >= w && t < w + 60000 && !fired[todayKey + p.k + 'w']) { fired[todayKey + p.k + 'w'] = true; startWarning(p); }
+    if (S.alarms[p.k] && t >= pt && t < pt + 120000 && !fired[todayKey + p.k]) { fired[todayKey + p.k] = true; hideWarning(); startAlarm(p); }
   });
 }
 
@@ -443,7 +456,8 @@ function unlockAudio() {
   try {
     player.src = chimeURI; player.muted = true;
     var pr = player.play();
-    var after = function () { player.pause(); player.currentTime = 0; player.muted = false; };
+    // only pause if nothing else has started playing since (e.g. the Test button)
+    var after = function () { if (player.muted) { player.pause(); player.currentTime = 0; player.muted = false; } };
     if (pr && pr.then) pr.then(after, function () { player.muted = false; }); else after();
   } catch (e) { player.muted = false; }
 }
@@ -478,6 +492,18 @@ function startAlarm(p) {
   alarmTimer = setTimeout(stopAlarm, 10 * 60 * 1000);
 }
 function stopAlarm() { stopSound(); $('alarm').classList.add('hidden'); clearTimeout(alarmTimer); }
+
+var WARN_MS = 5 * 60 * 1000, warnTimer = null;
+function startWarning(p) {
+  $('warnText').textContent = p.en + ' in 5 minutes — time for wudu';
+  $('warnBanner').classList.remove('hidden');
+  chimeLeft = 0;
+  player.src = 'warn.m4a'; player.muted = false;
+  var pr = player.play(); if (pr && pr.catch) pr.catch(function () {});
+  clearTimeout(warnTimer);
+  warnTimer = setTimeout(hideWarning, WARN_MS);
+}
+function hideWarning() { clearTimeout(warnTimer); $('warnBanner').classList.add('hidden'); }
 
 /* ---------------- weather ---------------- */
 function wx(code, day) {
@@ -551,14 +577,17 @@ function fillSettings() {
   while (tb.rows.length > 1) tb.deleteRow(1);
   PRAYERS.forEach(function (p) {
     var r = tb.insertRow(-1);
-    r.innerHTML = '<td class="n"></td><td class="c"></td><td class="c"><input type="number" step="1" min="-30" max="30"></td>';
+    r.innerHTML = '<td class="n"></td><td class="c"></td><td class="c"></td><td class="c"><input type="number" step="1" min="-30" max="30"></td>';
     r.cells[0].textContent = p.en;
     if (!p.sun) {
       var cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = !!draft.alarms[p.k];
       cb.onchange = function () { draft.alarms[p.k] = cb.checked; };
       r.cells[1].appendChild(cb);
+      var wb = document.createElement('input'); wb.type = 'checkbox'; wb.checked = !!draft.warn[p.k];
+      wb.onchange = function () { draft.warn[p.k] = wb.checked; };
+      r.cells[2].appendChild(wb);
     }
-    var num = r.cells[2].firstChild; num.value = draft.adj[p.k] || 0;
+    var num = r.cells[3].firstChild; num.value = draft.adj[p.k] || 0;
     num.onchange = function () { draft.adj[p.k] = parseInt(num.value, 10) || 0; };
   });
 }
@@ -610,6 +639,7 @@ $('testSound').onclick = function () {
   S.sound = keep;
 };
 $('stopAlarm').onclick = stopAlarm;
+$('warnBanner').onclick = function () { if (player.src.indexOf('warn') >= 0) stopSound(); hideWarning(); };
 
 renderWeather(store('kpc-weather'));
 if (S.lat === null) { $('weather').innerHTML = '<div class="w-empty">Weather will appear once a city is chosen.</div>'; openSettings(); }
