@@ -896,7 +896,7 @@ $('stopAlarm').onclick = stopAlarm;
 
 // Adam's PC (talks to the ESP32 "PC Helper" on the home Wi-Fi)
 // keys the ESP32 presses to switch to Dad's account and start Mortal Shell (same as the room page)
-var DAD_SEQ = 'wake,w2000,winl,w3000,space,w2500,tab,w700,tab,w700,enter,w20000,hotf6';
+var DAD_SEQ = 'wake,w2000,winl,w3000,space,w2500,tab,w700,down,w700,enter,w3000,enter,w25000,hotf6';
 function pcSend(a, msg) {
   $('pcMsg').textContent = 'Sending…';
   var img = new Image(), done = false;
