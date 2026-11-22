@@ -158,13 +158,54 @@ main{flex:1;display:flex;align-items:center;min-height:0;margin:8px 0 16px}
  .p{flex:1 0 40%;margin-bottom:10px}
  .day{padding:8px 3px}.ev{font-size:12px;padding:5px}.ev b{font-size:13px}
 }
+/* ===== v2 "glass home panel" look: bigger, clearer (Dad's request) ===== */
+body{background:#0b1830;background:radial-gradient(ellipse at 15% 0%,#1d3b6e 0%,rgba(29,59,110,0) 55%),radial-gradient(ellipse at 100% 100%,#0f4c4a 0%,rgba(15,76,74,0) 55%),linear-gradient(160deg,#0a1426,#0d2236)}
+.glass,.agw,.p,.big-btn,.icon-btn{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);
+ -webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);box-shadow:0 8px 30px rgba(0,0,0,.25)}
+.app{padding:20px 24px 20px}
+.greg{font-size:26px}
+.hijri{font-size:20px}
+.big-btn{display:flex;align-items:center;height:66px;border-radius:20px;color:var(--text);padding:0 18px 0 12px;margin-right:12px;cursor:pointer;text-align:left;font-size:16px;line-height:1.15}
+.big-btn .bi{font-size:32px;margin-right:10px}
+.big-btn b{font-size:20px}
+.big-btn.msg{background:rgba(34,197,94,.22);border-color:rgba(74,222,128,.45)}
+.big-btn.pc{background:rgba(59,130,246,.25);border-color:rgba(96,165,250,.5)}
+.big-btn:active{-webkit-transform:scale(.96);transform:scale(.96)}
+.icon-btn{width:56px;height:56px;border-radius:28px;font-size:24px;line-height:54px}
+main{margin:6px 0 14px}
+.clock{font-size:96px}
+.wmini{font-size:34px}
+.agw{border-radius:26px;padding:16px 20px;margin-left:22px}
+.agw-h span{font-size:16px}
+.agw .dlabel{font-size:19px;margin:12px 0 4px}
+.agw .item{padding:11px 0;font-size:24px}
+.agw .item .tm{width:86px;font-size:24px;font-weight:700;color:#fff}
+.agw .item .dot{width:14px;height:14px;border-radius:7px;margin-right:12px}
+.agw .item .tx small{font-size:19px;margin-left:4px}
+.agw .none{font-size:20px;padding:6px 0}
+.agw .pc-btn{height:50px;font-size:18px;border-radius:25px}
+.p{display:block;border-radius:22px;padding:14px 6px 12px}
+.p .ar{font-size:22px;margin:0}
+.p .en{font-size:22px;margin:2px 0 0}
+.p .tm{font-size:44px;font-weight:300;margin-top:4px}
+.p .tm small{font-size:18px}
+.p .bell{top:8px;right:12px;font-size:14px}
+.p.current{background:linear-gradient(160deg,var(--gold2),var(--gold))}
+/* agenda editor: big tap-to-pick chips */
+.picks{display:flex;flex-wrap:wrap;margin:0 -5px}
+.pick{margin:0 5px 10px;padding:14px 18px;border-radius:16px;border:2px solid var(--line);background:#0c172b;color:var(--text);font-size:19px;font-weight:600;cursor:pointer}
+.pick.sel{border-color:var(--gold);background:rgba(232,194,106,.18)}
+.days label{padding:10px 14px;border:2px solid var(--line);border-radius:14px;margin:0 8px 8px 0;font-size:18px}
 </style>
 </head>
 <body>
 <div class="app">
  <header>
   <div class="dates"><div class="greg" id="greg"></div><div class="hijri" id="hijri"></div></div>
-  <div class="loc"><span id="cityName" class="hidden"></span><button class="pc-btn" id="openIc">📢</button><button class="pc-btn" id="openPc">🎮 PC</button><button class="icon-btn" id="openSettings" aria-label="Settings">⚙︎</button></div>
+  <div class="loc"><span id="cityName" class="hidden"></span>
+   <button class="big-btn msg" id="openIc"><span class="bi">💬</span><span>Message<br><b>Adam</b></span></button>
+   <button class="big-btn pc" id="openPc"><span class="bi">🖥️</span><span>Adam's<br><b>PC</b></span></button>
+   <button class="icon-btn" id="openSettings" aria-label="Settings">⚙︎</button></div>
  </header>
  <main>
   <div class="left">
@@ -213,9 +254,21 @@ main{flex:1;display:flex;align-items:center;min-height:0;margin:8px 0 16px}
   <h2>Agenda</h2>
   <p class="hint">Activities show on the week and give a reminder before they start.</p>
   <ul class="aglist" id="agList"></ul>
-  <div class="row grid2">
-   <div><label class="l">Who</label><select id="agWho"><option>Adam</option><option>Noam</option><option>Jade</option><option>Dad</option><option>Mum</option><option>Family</option></select></div>
-   <div><label class="l">What</label><input type="text" id="agWhat" placeholder="e.g. Swimming"></div>
+  <div class="row"><label class="l">Activity</label>
+   <div class="picks" id="actPicks">
+    <button class="pick" data-act="Brazilian Jiu-Jitsu">🥋 BJJ</button>
+    <button class="pick" data-act="Football">⚽ Football</button>
+    <button class="pick" data-act="Swimming">🏊 Swimming</button>
+    <button class="pick" data-act="">✏️ Other…</button>
+   </div>
+   <input type="text" id="agWhat" placeholder="Type the activity" class="hidden" style="margin-top:4px">
+  </div>
+  <div class="row"><label class="l">Who</label>
+   <div class="picks" id="whoPicks">
+    <button class="pick sel" data-who="Adam">Adam</button><button class="pick" data-who="Noam">Noam</button><button class="pick" data-who="Jade">Jade</button>
+    <button class="pick" data-who="Dad">Dad</button><button class="pick" data-who="Mum">Mum</button><button class="pick" data-who="Family">Family</button>
+   </div>
+   <input type="hidden" id="agWho" value="Adam">
   </div>
   <div class="row grid2">
    <div><label class="l">Repeat</label><select id="agRepeat"><option value="weekly">Every week</option><option value="once">One day only</option></select></div>
@@ -432,7 +485,7 @@ function hijriString(date) {
       var parts = f.formatToParts(date), o = {};
       parts.forEach(function (p) { o[p.type] = p.value; });
       var mi = parseInt(o.month, 10), yr = parseInt(o.year, 10);
-      if (mi >= 1 && mi <= 12 && yr > 1300) return parseInt(o.day, 10) + ' ' + HIJRI_MONTHS[mi - 1] + ' ' + yr + ' AH';
+      if (mi >= 1 && mi <= 12 && yr > 1300) return parseInt(o.day, 10) + ' ' + HIJRI_MONTHS[mi - 1];
     }
   } catch (e) {}
   // tabular (Kuwaiti) fallback
@@ -442,7 +495,7 @@ function hijriString(date) {
   var j = Math.floor((10985 - l) / 5316) * Math.floor((50 * l) / 17719) + Math.floor(l / 5670) * Math.floor((43 * l) / 15238);
   l = l - Math.floor((30 - j) / 15) * Math.floor((17719 * j) / 50) - Math.floor(j / 16) * Math.floor((15238 * j) / 43) + 29;
   var mo = Math.floor((24 * l) / 709), day = l - Math.floor((709 * mo) / 24), yr2 = 30 * n + j - 30;
-  return day + ' ' + HIJRI_MONTHS[mo - 1] + ' ' + yr2 + ' AH';
+  return day + ' ' + HIJRI_MONTHS[mo - 1];
 }
 
 /* ---------------- prayer cards ---------------- */
@@ -471,7 +524,7 @@ function dayKey(d) { return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d
 function refreshDay(now) {
   todayKey = dayKey(now);
   today = S.lat === null ? null : prayersFor(now);
-  $('greg').textContent = now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  $('greg').textContent = now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
   $('hijri').textContent = hijriString(now);
   $('cityName').textContent = S.city || '';
   if (today) renderCards();
@@ -769,6 +822,20 @@ function renderAgList() {
     box.appendChild(l);
   });
 })();
+// tap-to-pick activity and person
+function pickIn(boxId, btn) { Array.prototype.forEach.call($(boxId).querySelectorAll('.pick'), function (b) { b.classList.toggle('sel', b === btn); }); }
+Array.prototype.forEach.call($('actPicks').querySelectorAll('.pick'), function (b) {
+  b.onclick = function () {
+    pickIn('actPicks', b);
+    var act = b.getAttribute('data-act');
+    $('agWhat').value = act;
+    $('agWhat').classList.toggle('hidden', !!act);
+    if (!act) $('agWhat').focus();
+  };
+});
+Array.prototype.forEach.call($('whoPicks').querySelectorAll('.pick'), function (b) {
+  b.onclick = function () { pickIn('whoPicks', b); $('agWho').value = b.getAttribute('data-who'); };
+});
 $('agRepeat').onchange = function () {
   var once = $('agRepeat').value === 'once';
   $('agDaysRow').classList.toggle('hidden', once); $('agDateRow').classList.toggle('hidden', !once);
@@ -777,7 +844,7 @@ $('openAg').onclick = function () { $('agErr').textContent = ''; $('agDate').val
 $('agClose').onclick = function () { $('agSheet').classList.add('hidden'); };
 $('agAdd').onclick = function () {
   var what = $('agWhat').value.replace(/^\s+|\s+$/g, ''), time = $('agTime').value, who = $('agWho').value, remind = +$('agRemind').value;
-  if (!what) { $('agErr').textContent = 'Type what it is (e.g. Swimming).'; return; }
+  if (!what) { $('agErr').textContent = 'Pick an activity (or tap Other and type it).'; return; }
   if (!/^\d\d:\d\d$/.test(time)) { $('agErr').textContent = 'Pick a time.'; return; }
   var e = { id: 'e' + Date.now(), who: who, what: what, time: time, remind: remind };
   if ($('agRepeat').value === 'once') {
@@ -792,7 +859,7 @@ $('agAdd').onclick = function () {
   var cutoff = ymd(new Date(Date.now() - 7 * 864e5));
   AG.once = AG.once.filter(function (x) { return x.date >= cutoff; });
   saveAg(); renderAgList(); renderWeek();
-  $('agWhat').value = ''; $('agErr').textContent = '';
+  $('agWhat').value = ''; $('agErr').textContent = ''; $('agWhat').classList.add('hidden'); pickIn('actPicks', null);
   Array.prototype.forEach.call($('agDays').querySelectorAll('input'), function (c) { c.checked = false; });
 };
 $('remOk').onclick = function () { $('remScreen').classList.add('hidden'); stopSound(); };
