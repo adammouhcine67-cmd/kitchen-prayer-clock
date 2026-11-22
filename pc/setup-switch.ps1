@@ -39,11 +39,24 @@ Add-Type -Namespace PCH -Name W -MemberDefinition @'
 }
 
 if ($AdminPart) {
-    New-Item -ItemType Directory -Force -Path $dir | Out-Null
-    New-SwitchTask 'PCHelper-SwitchToDad'  $DadUser
-    New-SwitchTask 'PCHelper-SwitchToAdam' $AdamUser
-    Write-Host "You can close this window." -ForegroundColor Cyan
-    Start-Sleep -Seconds 3
+    try {
+        if (-not $AdamUser -or -not $DadUser) {
+            Write-Host "Accounts on this PC:" -ForegroundColor Yellow
+            Get-LocalUser | Where-Object { $_.Enabled -and ('Administrator','Guest','DefaultAccount','WDAGUtilityAccount' -notcontains $_.Name) } |
+                ForEach-Object { Write-Host "   $($_.Name)    $($_.FullName)" }
+            if (-not $AdamUser) { $AdamUser = Read-Host "Type YOUR account name (from the list)" }
+            if (-not $DadUser)  { $DadUser  = Read-Host "Type DAD's account name (from the list)" }
+        }
+        New-Item -ItemType Directory -Force -Path $dir | Out-Null
+        New-SwitchTask 'PCHelper-SwitchToDad'  $DadUser
+        New-SwitchTask 'PCHelper-SwitchToAdam' $AdamUser
+        Write-Host ""
+        Write-Host "Done! You can close this window." -ForegroundColor Cyan
+    } catch {
+        Write-Host ""
+        Write-Host "ERROR: $($_.Exception.Message)" -ForegroundColor Red
+        Write-Host "Send a photo of this window." -ForegroundColor Red
+    }
     return
 }
 
