@@ -21,37 +21,32 @@
  <div class="bg-sleep"><div class="stars"></div><div class="moon"></div></div>
 </div>
 
-<div class="app">
- <header>
-  <div class="date" id="date"></div>
-  <div class="hdr-right">
-   <div class="pill" id="pcPill"><i></i><span id="pcPillT">PC</span></div>
+<div class="app bento">
+ <!-- hero: time + weather -->
+ <section class="tile hero">
+  <div class="hero-top">
+   <div class="date" id="date"></div>
    <button class="round" id="openSettings" aria-label="Settings">⚙︎</button>
   </div>
- </header>
- <main>
-  <section class="left">
-   <div class="clock" id="clock">--:--</div>
+  <div class="clock" id="clock">--:--</div>
+  <div class="hero-bot">
    <div class="weather" id="weather"></div>
    <div class="chips" id="chips"></div>
-  </section>
-  <section class="right">
-   <div class="label">Room mode</div>
-   <div class="modes">
-    <button class="mode gaming" data-mode="gaming"><span class="e">🎮</span><span><div class="t">Gaming</div><div class="s">Wakes PC · Chrome + Call of Duty</div></span></button>
-    <button class="mode study" data-mode="study"><span class="e">📖</span><span><div class="t">Study</div><div class="s">Wakes PC · opens Chrome · calm</div></span></button>
-    <button class="mode sleep" data-mode="sleep"><span class="e">🌙</span><span><div class="t">Sleep</div><div class="s">Puts the PC to sleep · dark screen</div></span></button>
-    <button class="mode adam" data-mode="adam"><span class="e">🧑</span><span><div class="t">Adam</div><div class="s">PC on · Adam's account</div></span></button>
-    <button class="mode dad" data-mode="dad"><span class="e">👨</span><span><div class="t">Dad</div><div class="s">PC on · Dad's account</div></span></button>
-   </div>
-   <div class="tools">
-    <button class="tool" id="tPc"><span class="e">🖥️</span>PC</button>
-    <button class="tool" id="tAlarm"><span class="e">⏰</span>Alarms</button>
-    <button class="tool" id="tTimer"><span class="e">⏱️</span>Timer</button>
-    <button class="tool" id="tIntercom"><span class="e">📢</span>Intercom</button>
-   </div>
-  </section>
- </main>
+  </div>
+ </section>
+
+ <!-- modes -->
+ <button class="tile mode gaming" data-mode="gaming"><span class="ic">🎮</span><span class="tx"><b class="t">Gaming</b><span class="s">Wakes PC · Chrome + Call of Duty</span></span><i class="on-dot"></i></button>
+ <button class="tile mode study" data-mode="study"><span class="ic">📖</span><span class="tx"><b class="t">Study</b><span class="s">Chrome · calm</span></span><i class="on-dot"></i></button>
+ <button class="tile mode sleep" data-mode="sleep"><span class="ic">🌙</span><span class="tx"><b class="t">Sleep</b><span class="s">PC to sleep</span></span><i class="on-dot"></i></button>
+ <button class="tile mode adam" data-mode="adam"><span class="ic">🧑</span><span class="tx"><b class="t">Adam</b><span class="s">PC on · my account</span></span><i class="on-dot"></i></button>
+ <button class="tile mode dad" data-mode="dad"><span class="ic">👨</span><span class="tx"><b class="t">Dad</b><span class="s">PC on · Dad's account</span></span><i class="on-dot"></i></button>
+
+ <!-- tools -->
+ <button class="tile tool pc" id="tPc"><span class="ic">🖥️</span><span class="tx"><b class="t">PC</b><span class="pill" id="pcPill"><i></i><span id="pcPillT">PC</span></span></span></button>
+ <button class="tile tool alarm" id="tAlarm"><span class="ic">⏰</span><b class="t">Alarms</b></button>
+ <button class="tile tool timer" id="tTimer"><span class="ic">⏱️</span><b class="t">Timer</b></button>
+ <button class="tile tool intercom" id="tIntercom"><span class="ic">📢</span><b class="t">Intercom</b></button>
 </div>
 
 <!-- PC sheet -->
