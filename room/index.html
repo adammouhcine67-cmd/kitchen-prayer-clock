@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="My Room">
 <meta name="theme-color" content="#04060b">
 <title>My Room</title>
-<link rel="stylesheet" href="room.css?v=2026-11-22f">
+<link rel="stylesheet" href="room.css?v=2026-11-22g">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.js"></script>
 </head>
 <body data-mode="none">
@@ -91,6 +91,9 @@
  <div class="row"><input type="text" id="cityInput" placeholder="Type a city" style="flex:1"><button class="btn" id="citySearch">Search</button></div>
  <div class="results" id="cityResults"></div>
  <p class="hint" id="cityNow"></p>
+ <div class="label" style="margin:18px 0 8px">"Hey Jarvis"</div>
+ <div class="row"><button class="btn ghost" id="wakeOn">Listening on</button><button class="btn ghost" id="wakeOff">Off</button></div>
+ <p class="hint">Say "Hey Jarvis" to start talking. The listening happens on this iPad only; nothing is sent until Jarvis opens.</p>
  <div class="label" style="margin:18px 0 8px">Clock</div>
  <div class="row"><button class="btn ghost" id="fmt24">24-hour</button><button class="btn ghost" id="fmt12">12-hour</button></div>
  <button class="btn ghost close" data-close>Close</button>
@@ -236,6 +239,7 @@
   player.src = ringURI;
   function unlock() {
     if (unlocked) return; unlocked = true; $('tapnote').classList.add('hidden');
+    try { audioCtx(); wakeStart(); } catch (e) {}
     player.muted = true;
     var p = player.play();
     var after = function () { if (player.muted) { player.pause(); player.currentTime = 0; player.muted = false; } };
@@ -430,7 +434,7 @@
       'Talk like a calm, witty, helpful butler. Keep answers short (1 to 3 sentences) unless asked for more. Answer in the language you are spoken to (English or French). ' +
       'Use the live info below for time, date, weather, prayer times, room mode, PC state, alarms and timers; never invent them. ' +
       'Use your tools to do things (room modes, PC, alarms, timers, messages to the kitchen) and say briefly what you did. Messages to the kitchen come from Adam. ' +
-      'If you did not understand, ask one short question.\n\nLIVE INFO:\n' + JSON.stringify(aiCtx());
+      'IMPORTANT: to do anything (timers, alarms, modes, PC, messages, agenda) you MUST call the matching tool first, then speak once after it returns. Never say something is done unless the tool result says so. If you did not understand, ask one short question.\n\nLIVE INFO:\n' + JSON.stringify(aiCtx());
   }
   var icChan = null;
   function sendKitchen(text) {
@@ -462,16 +466,43 @@
   }
   function b64(buf) { var u = new Uint8Array(buf), s = '', i; for (i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); }
 
+  // ---------- one shared microphone (for "Hey Jarvis" and the voice chat) ----------
+  var AUD = { ctx: null, stream: null, src: null, proc: null, feeds: [], starting: null };
+  function audioCtx() {
+    if (!AUD.ctx) AUD.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (AUD.ctx.state === 'suspended') AUD.ctx.resume();
+    return AUD.ctx;
+  }
+  function micOpen() {
+    if (AUD.stream && AUD.stream.active) return Promise.resolve(AUD.stream);
+    if (AUD.starting) return AUD.starting;
+    var ctx = audioCtx();
+    AUD.starting = navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } }).then(function (st) {
+      AUD.starting = null; AUD.stream = st;
+      try { if (AUD.src) { AUD.src.disconnect(); AUD.proc.disconnect(); } } catch (e) {}
+      AUD.src = ctx.createMediaStreamSource(st); AUD.proc = ctx.createScriptProcessor(4096, 1, 1);
+      AUD.proc.onaudioprocess = function (e) { var inp = e.inputBuffer.getChannelData(0); for (var i = 0; i < AUD.feeds.length; i++) AUD.feeds[i](inp, ctx.sampleRate); };
+      AUD.src.connect(AUD.proc); AUD.proc.connect(ctx.destination);
+      st.getAudioTracks().forEach(function (t) { t.onended = function () { AUD.stream = null; setTimeout(function () { if (wakeOn()) micOpen().catch(function () {}); }, 2000); }; });
+      return st;
+    }, function (e) { AUD.starting = null; throw e; });
+    return AUD.starting;
+  }
+  function micRelease() {   // only when "Hey Jarvis" is off
+    if (wakeOn() || !AUD.stream) return;
+    AUD.stream.getTracks().forEach(function (t) { t.onended = null; t.stop(); }); AUD.stream = null;
+  }
+
+  // ---------- voice chat ----------
   var live = null;
   function liveStop(keepUi) {
     var L = live; live = null; if (!L) return;
     L.closed = true;
     try { if (L.ws) L.ws.close(); } catch (e) {}
-    try { if (L.proc) { L.proc.disconnect(); L.src.disconnect(); } } catch (e) {}
-    if (L.stream) L.stream.getTracks().forEach(function (t) { t.stop(); });
+    if (L.feed) AUD.feeds = AUD.feeds.filter(function (f) { return f !== L.feed; });
     L.sources.forEach(function (s) { try { s.stop(); } catch (e) {} });
     clearInterval(L.tick);
-    try { L.ctx.close(); } catch (e) {}
+    micRelease();
     if (!keepUi) $('aiSheet').classList.add('hidden');
   }
   function stopPlayback(L) { L.sources.forEach(function (s) { try { s.stop(); } catch (e) {} }); L.sources = []; L.playT = 0; }
@@ -483,11 +514,10 @@
     L.sources.push(s); s.onended = function () { var k = L.sources.indexOf(s); if (k >= 0) L.sources.splice(k, 1); };
   }
   function micStart(L) {
-    var src = L.ctx.createMediaStreamSource(L.stream), proc = L.ctx.createScriptProcessor(4096, 1, 1), ratio = L.ctx.sampleRate / 16000;
-    proc.onaudioprocess = function (e) {
+    L.feed = function (inp, rate) {
       if (!L.ready || !L.ws || L.ws.readyState !== 1) return;
       if (L.ctx.currentTime < L.playT + 0.3) return;            // Jarvis is talking: don't hear himself
-      var inp = e.inputBuffer.getChannelData(0), n = Math.floor(inp.length / ratio), out = new Int16Array(n), lvl = 0;
+      var ratio = rate / 16000, n = Math.floor(inp.length / ratio), out = new Int16Array(n), lvl = 0;
       for (var i = 0; i < n; i++) {
         var a = Math.floor(i * ratio), b = Math.min(inp.length, Math.floor((i + 1) * ratio)), sum = 0;
         for (var k = a; k < b; k++) sum += inp[k];
@@ -496,11 +526,12 @@
       if (Math.sqrt(lvl / n) > 0.02) L.lastAct = Date.now();
       L.ws.send(JSON.stringify({ realtimeInput: { audio: { data: b64(out.buffer), mimeType: 'audio/pcm;rate=16000' } } }));
     };
-    src.connect(proc); proc.connect(L.ctx.destination); L.src = src; L.proc = proc;
+    AUD.feeds.push(L.feed);
   }
   function liveMsg(L, m) {
     if (m.setupComplete) {
       L.ready = true; micStart(L); aiState('listening', 'Listening…');
+      if (L.wake) L.ws.send(JSON.stringify({ clientContent: { turns: [{ role: 'user', parts: [{ text: '(Adam just said "Hey Jarvis" to wake you up. Answer with a very short greeting, like "Yes?" or "At your service." in English, then wait for his request.)' }] }], turnComplete: true } }));
       return;
     }
     var sc = m.serverContent;
@@ -521,22 +552,22 @@
       L.ws.send(JSON.stringify({ toolResponse: { functionResponses: res } }));
     }
   }
-  function liveStart() {
+  function liveStart(byWake) {
     if (live) return;
     $('aiLog').innerHTML = ''; capMe = capAi = null;
     $('aiSheet').classList.remove('hidden'); aiState('thinking', 'Connecting…');
-    var AC = window.AudioContext || window.webkitAudioContext, L = { ctx: new AC(), sources: [], playT: 0, closed: false, lastAct: Date.now() };
-    live = L; L.ctx.resume();
+    var L = { ctx: audioCtx(), sources: [], playT: 0, closed: false, lastAct: Date.now(), wake: !!byWake };
+    live = L;
     L.tick = setInterval(function () {
       if (!L.ready) return;
       var talking = L.ctx.currentTime < L.playT;
       if (talking && $('aiOrb').className.indexOf('speaking') < 0) aiState('speaking', '');
       else if (!talking && $('aiOrb').className.indexOf('listening') < 0) aiState('listening', 'Listening…');
-      if (Date.now() - L.lastAct > 90000) { liveStop(true); aiState('', 'Went quiet, so I hung up. Tap the orb to talk again.'); }
+      if (Date.now() - L.lastAct > (L.wake ? 45000 : 90000)) { liveStop(L.wake); if (!L.wake) aiState('', 'Went quiet, so I hung up. Tap the orb to talk again.'); }
     }, 250);
-    navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } })
+    micOpen()
       .then(function (stream) {
-        if (L.closed) { stream.getTracks().forEach(function (t) { t.stop(); }); return; }
+        if (L.closed) return;
         L.stream = stream;
         return fetch(AI_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + SB_KEY, apikey: SB_KEY }, body: JSON.stringify({ live: true }) })
           .then(function (r) { return r.json(); })
@@ -570,7 +601,102 @@
         aiState('', e && e.name === 'NotAllowedError' ? 'Microphone blocked: allow it for this page and try again' : 'Could not start: ' + (e && e.message ? e.message : e));
       });
   }
-  $('tAi').onclick = function () { liveStart(); };
+
+  // ---------- "Hey Jarvis" (runs on this iPad only: openWakeWord + onnxruntime) ----------
+  var ORT_URL = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.23.2/dist/';
+  var OWW_URL = 'https://cdn.jsdelivr.net/npm/openwakeword-wasm-browser@0.1.1/models/';
+  var WK = { ready: false, loading: null, acc: new Float32Array(1280), pos: 0, t: 0, q: [], running: false, melBuf: [], hist: [], win: 16, last: 0, loud: 0 };
+  function wakeOn() { return S.wake !== false; }
+  function wakeBadge() { $('tAi').classList.toggle('wake', !!(WK.ready && wakeOn() && AUD.stream)); }
+  function loadScript(src) { return new Promise(function (res, rej) { var sc = document.createElement('script'); sc.src = src; sc.onload = res; sc.onerror = rej; document.head.appendChild(sc); }); }
+  function wakeLoad() {
+    if (WK.loading) return WK.loading;
+    WK.loading = loadScript(ORT_URL + 'ort.min.js').then(function () {
+      ort.env.wasm.wasmPaths = ORT_URL; ort.env.wasm.numThreads = 1;
+      var o = { executionProviders: ['wasm'] };
+      return Promise.all([ort.InferenceSession.create(OWW_URL + 'melspectrogram.onnx', o), ort.InferenceSession.create(OWW_URL + 'embedding_model.onnx', o), ort.InferenceSession.create(OWW_URL + 'hey_jarvis_v0.1.onnx', o)]);
+    }).then(function (ss) {
+      WK.mel = ss[0]; WK.emb = ss[1]; WK.kw = ss[2];
+      try { var md = WK.kw.inputMetadata, nm = WK.kw.inputNames[0], mm = Array.isArray(md) ? (md.filter(function (x) { return x && x.name === nm; })[0] || md[0]) : (md && md[nm]); if (mm && mm.shape && typeof mm.shape[1] === 'number') WK.win = mm.shape[1]; } catch (e) {}
+      WK.hist = []; for (var i = 0; i < WK.win; i++) WK.hist.push(new Float32Array(96));
+      WK.ready = true; wakeBadge();
+    });
+    WK.loading.catch(function (e) { WK.loading = null; console.warn('Hey Jarvis failed to load', e); });
+    return WK.loading;
+  }
+  function wakeFeed(inp, rate) {
+    if (!WK.ready || live || !wakeOn()) return;
+    var ratio = rate / 16000, t = WK.t;
+    while (t + ratio <= inp.length) {
+      var a = Math.max(0, Math.floor(t)), b = Math.floor(t + ratio), sum = 0;
+      for (var k = a; k < b; k++) sum += inp[k];
+      WK.acc[WK.pos++] = sum / Math.max(1, b - a); t += ratio;
+      if (WK.pos === 1280) { WK.q.push(WK.acc); WK.acc = new Float32Array(1280); WK.pos = 0; }
+    }
+    WK.t = t - inp.length;
+    wakePump();
+  }
+  AUD.feeds.push(wakeFeed);
+  window.__jarvis = { wk: WK, aud: AUD };   // for troubleshooting
+  function wakePump() {
+    if (WK.running || !WK.q.length) return;
+    if (WK.q.length > 25) { WK.q = WK.q.slice(-4); WK.melBuf = []; WK.prev = null; }      // fell behind: skip ahead
+    WK.running = true;
+    wakeStep(WK.q.shift()).then(function () { WK.running = false; wakePump(); }, function (e) { WK.running = false; console.warn(e); wakePump(); });
+  }
+  // same steps as openWakeWord: int16-scale audio, 480 samples of overlap -> 8 mel frames per 80 ms, one embedding per chunk
+  async function wakeStep(chunk) {
+    var rms = 0, i, j, k; for (i = 0; i < chunk.length; i++) rms += chunk[i] * chunk[i];
+    if (Math.sqrt(rms / chunk.length) > 0.006) WK.loud = Date.now();
+    var x = new Float32Array(1760); x.set(WK.prev || new Float32Array(480), 0);
+    for (i = 0; i < 1280; i++) x[480 + i] = chunk[i] * 32767;
+    WK.prev = x.slice(1280);
+    var feed = {}; feed[WK.mel.inputNames[0]] = new ort.Tensor('float32', x, [1, 1760]);
+    var d = (await WK.mel.run(feed))[WK.mel.outputNames[0]].data, frames = Math.floor(d.length / 32);
+    for (j = 0; j < frames; j++) { var f = new Float32Array(32); for (k = 0; k < 32; k++) f[k] = d[j * 32 + k] / 10 + 2; WK.melBuf.push(f); }
+    if (WK.melBuf.length < 76) return;
+    WK.melBuf = WK.melBuf.slice(-76);
+    var flat = new Float32Array(76 * 32); for (j = 0; j < 76; j++) flat.set(WK.melBuf[j], j * 32);
+    var ef = {}; ef[WK.emb.inputNames[0]] = new ort.Tensor('float32', flat, [1, 76, 32, 1]);
+    WK.hist.shift(); WK.hist.push(new Float32Array((await WK.emb.run(ef))[WK.emb.outputNames[0]].data));
+    var h = new Float32Array(WK.win * 96); for (j = 0; j < WK.win; j++) h.set(WK.hist[j], j * 96);
+    var kf = {}; kf[WK.kw.inputNames[0]] = new ort.Tensor('float32', h, [1, WK.win, 96]);
+    var score = (await WK.kw.run(kf))[WK.kw.outputNames[0]].data[0];
+    WK.lastScore = score; if (!(WK.maxScore >= score)) WK.maxScore = score; WK.steps = (WK.steps || 0) + 1;
+    if (score > 0.6 && Date.now() - WK.loud < 1500 && Date.now() - WK.last > 3000 && !live) { WK.last = Date.now(); onWake(score); }
+  }
+  function ding() {
+    try {
+      var c = audioCtx(), t0 = c.currentTime;
+      [[880, 0], [1320, 0.12]].forEach(function (n) {
+        var o = c.createOscillator(), g = c.createGain(); o.frequency.value = n[0]; o.connect(g); g.connect(c.destination);
+        g.gain.setValueAtTime(0.0001, t0 + n[1]); g.gain.exponentialRampToValueAtTime(0.25, t0 + n[1] + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t0 + n[1] + 0.25);
+        o.start(t0 + n[1]); o.stop(t0 + n[1] + 0.3);
+      });
+    } catch (e) {}
+  }
+  function onWake() {
+    if (live || !$('ring').classList.contains('hidden')) return;
+    WK.q = []; WK.melBuf = []; WK.prev = null;
+    for (var i = 0; i < WK.hist.length; i++) WK.hist[i] = new Float32Array(96);
+    ding(); liveStart(true);
+  }
+  function wakeStart() {
+    if (!wakeOn()) { wakeBadge(); return; }
+    micOpen().then(wakeLoad).then(wakeBadge).catch(function (e) { console.warn('Hey Jarvis off:', e); wakeBadge(); });
+  }
+  function wakeSet(on) {
+    S.wake = on; saveS();
+    $('wakeOn').classList.toggle('sel', on); $('wakeOff').classList.toggle('sel', !on);
+    if (on) wakeStart(); else { micRelease(); wakeBadge(); }
+    toast(on ? 'Say "Hey Jarvis" any time' : '"Hey Jarvis" is off');
+  }
+  $('wakeOn').onclick = function () { audioCtx(); wakeSet(true); };
+  $('wakeOff').onclick = function () { wakeSet(false); };
+  $('wakeOn').classList.toggle('sel', wakeOn()); $('wakeOff').classList.toggle('sel', !wakeOn());
+  document.addEventListener('visibilitychange', function () { if (!document.hidden && wakeOn() && unlocked) { audioCtx(); wakeStart(); } });
+
+  $('tAi').onclick = function () { liveStart(false); };
   $('aiOrb').onclick = function () { if (!live) { liveStart(); return; } if (live.ctx.currentTime < live.playT) { stopPlayback(live); live.lastAct = Date.now(); } };
   $('aiEnd').onclick = $('aiClose').onclick = function () { liveStop(false); };
   loadPrayers(); setInterval(loadPrayers, 3600000);
@@ -585,7 +711,7 @@
 <script>
 /* auto-update: every 5 min, look for a newer version of this page and reload (home-screen apps keep old copies otherwise) */
 (function () {
-  var PAGE_VER = '2026-11-22f';
+  var PAGE_VER = '2026-11-22g';
   function busy() { var a = document.getElementsByTagName('audio'); for (var i = 0; i < a.length; i++) if (!a[i].paused) return true; return false; }
   function check() {
     var x = new XMLHttpRequest();

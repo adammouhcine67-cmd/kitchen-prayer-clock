@@ -154,6 +154,9 @@ input[type=time],input[type=number],input[type=text]{background:#0b1426;border:1
 .ai-btn{display:flex;align-items:center;gap:8px;height:44px;padding:0 14px 0 6px;border-radius:22px;cursor:pointer;color:#fff;font-weight:600;font-size:15px;letter-spacing:.04em;
  border:1px solid rgba(124,92,255,.55);background:linear-gradient(140deg,rgba(94,176,255,.18),rgba(124,92,255,.25));box-shadow:0 0 22px -6px #7c5cff}
 .ai-btn:active{transform:scale(.95)}
+.ai-btn{position:relative}
+.ai-btn.wake:after{content:"";position:absolute;top:4px;right:6px;width:8px;height:8px;border-radius:4px;background:#2ee6c5;box-shadow:0 0 8px #2ee6c5}
+.btn.ghost.sel{background:rgba(94,176,255,.3);color:#fff}
 .orb{position:relative;width:200px;height:200px;flex:none;border:0;background:none;padding:0;cursor:pointer}
 .orb b{position:absolute;left:22%;top:22%;right:22%;bottom:22%;border-radius:50%;
  background:radial-gradient(circle at 35% 30%,#fff,#9fd0ff 18%,#5eb0ff 40%,#7c5cff 75%,#3b1d8f);
