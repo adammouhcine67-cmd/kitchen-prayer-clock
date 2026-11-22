@@ -21,7 +21,7 @@ Set-Content -Path $log -Value "listener started for $env:USERNAME"
 trap { Log "ERROR: $($_.Exception.Message)"; continue }
 Add-Type -Namespace PCH -Name Keys -MemberDefinition @"
 [DllImport("user32.dll", SetLastError=true)] public static extern bool RegisterHotKey(System.IntPtr h, int id, uint mods, uint vk);
-[DllImport("user32.dll")] public static extern int GetMessage(out MSG m, System.IntPtr h, uint min, uint max);
+[DllImport("user32.dll")] public static extern bool PeekMessage(out MSG m, System.IntPtr h, uint min, uint max, uint remove);
 public struct MSG { public System.IntPtr hwnd; public uint message; public System.IntPtr wParam; public System.IntPtr lParam; public uint time; public int x; public int y; }
 "@
 # key -> first script that exists in this account
@@ -37,24 +37,42 @@ foreach ($vk in @($map.Keys)) {
   $ok = [PCH.Keys]::RegisterHotKey([IntPtr]::Zero, [int]$vk, [uint32]$mods, [uint32]$vk)
   Log ("register F{0}: {1} (error {2})" -f ($vk - 0x6F), $ok, [Runtime.InteropServices.Marshal]::GetLastWin32Error())
 }
+# DOUBLE press (twice within 1.5 s) = "switch account only" (room page Adam / Dad modes):
+#   F6 x2 -> switch to Dad (only from Adam's account)    F9 x2 -> switch to Adam (only from Dad's account)
+$double = @{ 0x75 = @('switch-to-dad.ps1'); 0x78 = @('switch-to-adam.ps1') }
+function RunFirst($names, $label) {
+  foreach ($name in $names) {
+    $f = Join-Path $dir $name
+    if (Test-Path $f) {
+      Start-Process powershell.exe -WindowStyle Hidden -ArgumentList "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$f`""
+      Log "$label -> $name"; return
+    }
+  }
+  Log "$label -> nothing to do in this account"
+}
 $m = New-Object 'PCH.Keys+MSG'
+$pendVk = 0; $pendAt = [DateTime]::MinValue
 Log "waiting for keys"
-while ([PCH.Keys]::GetMessage([ref]$m, [IntPtr]::Zero, 0, 0) -gt 0) {
-  if ($m.message -eq 0x0312) {                                 # WM_HOTKEY
-    $vk = [int]$m.wParam
-    $ran = $false
-    foreach ($name in $map[$vk]) {
-      $f = Join-Path $dir $name
-      if (Test-Path $f) {
-        Start-Process powershell.exe -WindowStyle Hidden -ArgumentList "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$f`""
-        Log ("F{0} pressed -> {1}" -f ($vk - 0x6F), $name); $ran = $true
-        break
+while ($true) {
+  while ([PCH.Keys]::PeekMessage([ref]$m, [IntPtr]::Zero, 0, 0, 1)) {   # PM_REMOVE
+    if ($m.message -eq 0x0312) {                                          # WM_HOTKEY
+      $vk = [int]$m.wParam; $now = Get-Date
+      if ($pendVk -eq $vk -and ($now - $pendAt).TotalMilliseconds -lt 1500) {
+        $pendVk = 0
+        RunFirst $double[$vk] ("F{0} double" -f ($vk - 0x6F))
+      } else {
+        if ($pendVk) { RunFirst $map[$pendVk] ("F{0}" -f ($pendVk - 0x6F)) }   # a different key: flush the waiting one
+        $pendVk = $vk; $pendAt = $now
       }
     }
-    if (-not $ran) { Log ("F{0} pressed -> no script in this account" -f ($vk - 0x6F)) }
   }
+  # single press: run it once no second press came within 1.5 s
+  if ($pendVk -and ((Get-Date) - $pendAt).TotalMilliseconds -ge 1500) {
+    $v = $pendVk; $pendVk = 0
+    RunFirst $map[$v] ("F{0}" -f ($v - 0x6F))
+  }
+  Start-Sleep -Milliseconds 50
 }
-Log "listener stopped"
 '@ | Set-Content -Encoding UTF8 (Join-Path $dir 'key-listener.ps1')
 Write-Host "[ok] Key listener written" -ForegroundColor Green
 
