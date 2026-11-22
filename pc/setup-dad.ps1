@@ -72,6 +72,21 @@ $lnk2.Hotkey = 'Ctrl+Alt+Shift+F9'
 $lnk2.Save()
 Write-Host "[ok] Switch to Adam  ->  Ctrl+Alt+Shift+F9 (in Dad's account)" -ForegroundColor Green
 
+# 4. Ctrl+Alt+Shift+F7 in Dad's account = put the PC to sleep (same as in Adam's account)
+@"
+Add-Type -AssemblyName System.Windows.Forms
+[System.Windows.Forms.Application]::SetSuspendState('Suspend', `$false, `$false) | Out-Null
+"@ | Set-Content -Encoding UTF8 (Join-Path $dir 'sleep-pc.ps1')
+$lnk3 = $shell.CreateShortcut((Join-Path $startMenu 'Sleep PC.lnk'))
+$lnk3.TargetPath = "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe"
+$lnk3.Arguments = "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$(Join-Path $dir 'sleep-pc.ps1')`""
+$lnk3.WindowStyle = 7
+$lnk3.Hotkey = 'Ctrl+Alt+Shift+F7'
+$lnk3.Save()
+Write-Host "[ok] Sleep PC  ->  Ctrl+Alt+Shift+F7 (in Dad's account)" -ForegroundColor Green
+Write-Host ""
+Write-Host "IMPORTANT: sign out of this account and back in once, so Windows picks up the new keys." -ForegroundColor Yellow
+
 Write-Host ""
 Write-Host "Done! Test it: press Ctrl+Alt+Shift+F6 - Mortal Shell should start." -ForegroundColor Cyan
 Write-Host ""
