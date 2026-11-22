@@ -14,10 +14,13 @@ Write-Host "=== Reliable keys setup ($env:USERNAME) ===" -ForegroundColor Cyan
 
 # 1. the listener
 @'
-$ErrorActionPreference = 'SilentlyContinue'
 $dir = Join-Path $env:LOCALAPPDATA 'PCHelper'
+$log = Join-Path $dir 'key-listener.log'
+function Log($t) { Add-Content -Path $log -Value ("{0:HH:mm:ss} {1}" -f (Get-Date), $t) }
+Set-Content -Path $log -Value "listener started for $env:USERNAME"
+trap { Log "ERROR: $($_.Exception.Message)"; continue }
 Add-Type -Namespace PCH -Name Keys -MemberDefinition @"
-[DllImport("user32.dll")] public static extern bool RegisterHotKey(System.IntPtr h, int id, uint mods, uint vk);
+[DllImport("user32.dll", SetLastError=true)] public static extern bool RegisterHotKey(System.IntPtr h, int id, uint mods, uint vk);
 [DllImport("user32.dll")] public static extern int GetMessage(out MSG m, System.IntPtr h, uint min, uint max);
 public struct MSG { public System.IntPtr hwnd; public uint message; public System.IntPtr wParam; public System.IntPtr lParam; public uint time; public int x; public int y; }
 "@
@@ -30,20 +33,28 @@ $map = @{
   0x79 = @('launch-cod.ps1')                                  # F10
 }
 $mods = 0x1 -bor 0x2 -bor 0x4 -bor 0x4000                      # Alt + Ctrl + Shift, no auto-repeat
-foreach ($vk in $map.Keys) { [PCH.Keys]::RegisterHotKey([IntPtr]::Zero, [int]$vk, $mods, [uint32]$vk) | Out-Null }
-$m = New-Object PCH.Keys+MSG
+foreach ($vk in @($map.Keys)) {
+  $ok = [PCH.Keys]::RegisterHotKey([IntPtr]::Zero, [int]$vk, [uint32]$mods, [uint32]$vk)
+  Log ("register F{0}: {1} (error {2})" -f ($vk - 0x6F), $ok, [Runtime.InteropServices.Marshal]::GetLastWin32Error())
+}
+$m = New-Object 'PCH.Keys+MSG'
+Log "waiting for keys"
 while ([PCH.Keys]::GetMessage([ref]$m, [IntPtr]::Zero, 0, 0) -gt 0) {
   if ($m.message -eq 0x0312) {                                 # WM_HOTKEY
     $vk = [int]$m.wParam
+    $ran = $false
     foreach ($name in $map[$vk]) {
       $f = Join-Path $dir $name
       if (Test-Path $f) {
         Start-Process powershell.exe -WindowStyle Hidden -ArgumentList "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$f`""
+        Log ("F{0} pressed -> {1}" -f ($vk - 0x6F), $name); $ran = $true
         break
       }
     }
+    if (-not $ran) { Log ("F{0} pressed -> no script in this account" -f ($vk - 0x6F)) }
   }
 }
+Log "listener stopped"
 '@ | Set-Content -Encoding UTF8 (Join-Path $dir 'key-listener.ps1')
 Write-Host "[ok] Key listener written" -ForegroundColor Green
 
