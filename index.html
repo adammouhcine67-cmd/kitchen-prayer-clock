@@ -896,7 +896,7 @@ $('stopAlarm').onclick = stopAlarm;
 
 // Adam's PC (talks to the ESP32 "PC Helper" on the home Wi-Fi)
 // keys the ESP32 presses to switch to Dad's account and start Mortal Shell (same as the room page)
-var DAD_SEQ = 'wake,w2000,winl,w3000,space,w2500,tab,w700,down,w700,enter,w3000,enter,w25000,hotf6';
+var DAD_SEQ = 'wake,w2000,winl,w20000,hotf6,w10000,hotf6,w10000,hotf6,w10000,hotf6,w10000,hotf6,w10000,hotf6,w10000,hotf6,w10000,hotf6,w10000,hotf6,w10000,hotf6,w10000,hotf6,w10000,hotf6,w10000,hotf6,w10000,hotf6,w10000,hotf6,w10000';
 function pcSend(a, msg) {
   $('pcMsg').textContent = 'Sending…';
   var img = new Image(), done = false;
@@ -921,7 +921,7 @@ $('pcClose').onclick = function () { $('pcSheet').classList.add('hidden'); };
 $('pcReady').onclick = function () { pcSend('ready', 'Done — the PC is getting ready.'); };
 $('pcCod').onclick = function () { pcSend('ready', 'Done — Call of Duty and Chrome are opening.'); };
 $('pcChrome').onclick = function () { pcSend('chrome', 'Done — Chrome is opening.'); };
-$('pcDad').onclick = function () { pcSend('dad', "Done — switching to Dad's account, then Mortal Shell."); };
+$('pcDad').onclick = function () { pcSend('dad', "Done — Dad: click your name on the PC. Mortal Shell starts by itself."); };
 $('warnBanner').onclick = function () { if (player.src.indexOf('warn') >= 0) stopSound(); hideWarning(); };
 
 renderWeather(store('kpc-weather'));
