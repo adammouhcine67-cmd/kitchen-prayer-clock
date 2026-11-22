@@ -896,13 +896,16 @@ $('stopAlarm').onclick = stopAlarm;
 
 // Adam's PC (talks to the ESP32 "PC Helper" on the home Wi-Fi)
 // keys the ESP32 presses to switch to Dad's account and start Mortal Shell (same as the room page)
-var DAD_SEQ = 'wake,w2000,winl,w20000,hotf6,w10000,hotf6,w10000,hotf6,w10000,hotf6,w10000,hotf6,w10000,hotf6,w10000,hotf6,w10000,hotf6,w10000,hotf6,w10000,hotf6,w10000,hotf6,w10000,hotf6,w10000,hotf6,w10000,hotf6,w10000,hotf6,w10000';
+// keys to land in Adam's account (switches back from Dad's if needed), then Chrome + Call of Duty
+var ADAM_SEQ = 'wake,w1000,winl,w2500,space,w1500,enter,w8000,hotf9,w8000,space,w1500,enter,w20000,hotf9';
+var DAD_SEQ = 'wake,w1000,winl,w2500,space,w1500,enter,w8000,hotf6,w8000,space,w2000,enter,w25000,hotf6,w15000,hotf6';
 function pcSend(a, msg) {
   $('pcMsg').textContent = 'Sending…';
   var img = new Image(), done = false;
   var finish = function () { if (done) return; done = true; $('pcMsg').textContent = msg; };
   img.onload = img.onerror = finish;      // the reply isn't an image, so onerror still means "it arrived"
-  img.src = 'http://pc-helper.local/do?a=' + (a === 'dad' ? 'seq&s=' + encodeURIComponent(DAD_SEQ) : a) + '&t=' + Date.now();
+  var seqs = { dad: DAD_SEQ, ready: ADAM_SEQ };
+  img.src = 'http://pc-helper.local/do?a=' + (seqs[a] ? 'seq&s=' + encodeURIComponent(seqs[a]) : a) + '&t=' + Date.now();
   setTimeout(finish, 3000);
 }
 // Intercom (runs all the time in a frame; shown on first start, on 📢, and when a message arrives)
@@ -921,7 +924,7 @@ $('pcClose').onclick = function () { $('pcSheet').classList.add('hidden'); };
 $('pcReady').onclick = function () { pcSend('ready', 'Done — the PC is getting ready.'); };
 $('pcCod').onclick = function () { pcSend('ready', 'Done — Call of Duty and Chrome are opening.'); };
 $('pcChrome').onclick = function () { pcSend('chrome', 'Done — Chrome is opening.'); };
-$('pcDad').onclick = function () { pcSend('dad', "Done — Dad: click your name on the PC. Mortal Shell starts by itself."); };
+$('pcDad').onclick = function () { pcSend('dad', "Done — switching to Dad's account, then Mortal Shell."); };
 $('warnBanner').onclick = function () { if (player.src.indexOf('warn') >= 0) stopSound(); hideWarning(); };
 
 renderWeather(store('kpc-weather'));
