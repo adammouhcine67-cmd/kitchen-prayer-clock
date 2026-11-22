@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="My Room">
 <meta name="theme-color" content="#0a1222">
 <title>My Room</title>
-<link rel="stylesheet" href="room.css">
+<link rel="stylesheet" href="room.css?v=2026-11-22b">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.js"></script>
 </head>
 <body data-mode="none">
@@ -365,6 +365,23 @@
   renderAlarms(); renderTimers();
   tick(); setInterval(tick, 1000);
   pcConnect();
+})();
+</script>
+<script>
+/* auto-update: every 5 min, look for a newer version of this page and reload (home-screen apps keep old copies otherwise) */
+(function () {
+  var PAGE_VER = '2026-11-22b';
+  function busy() { var a = document.getElementsByTagName('audio'); for (var i = 0; i < a.length; i++) if (!a[i].paused) return true; return false; }
+  function check() {
+    var x = new XMLHttpRequest();
+    x.open('GET', location.pathname + '?v=' + Date.now(), true);
+    x.onload = function () {
+      var m = /PAGE_VER = '([^']+)'/.exec(x.responseText || '');
+      if (x.status === 200 && m && m[1] !== PAGE_VER && !busy()) location.replace(location.pathname + '?v=' + m[1]);
+    };
+    x.send();
+  }
+  setInterval(check, 300000); setTimeout(check, 20000);
 })();
 </script>
 </body>
