@@ -196,26 +196,30 @@ main{margin:6px 0 14px}
 .pick{margin:0 5px 10px;padding:14px 18px;border-radius:16px;border:2px solid var(--line);background:#0c172b;color:var(--text);font-size:19px;font-weight:600;cursor:pointer}
 .pick.sel{border-color:var(--gold);background:rgba(232,194,106,.18)}
 .days label{padding:10px 14px;border:2px solid var(--line);border-radius:14px;margin:0 8px 8px 0;font-size:18px}
-/* ===== v3 futuristic look (same style as the room iPad); kept simple for the old iPad: no blur, no animation ===== */
-:root{--kacc:#e8c26a;--kacc2:#2ee6c5}
+/* ===== v3 futuristic look: same colours + liquid glass as the room iPad ===== */
+:root{--kacc:#5eb0ff;--kacc2:#7c5cff}
 html,body{background:#04060b}
 body{background:#04060b}
 .kbg{position:fixed;top:0;left:0;right:0;bottom:0;z-index:0;overflow:hidden;background:#04060b;background:radial-gradient(ellipse at 50% 0%,#0b1020 0%,#04060b 70%)}
-.kg1{position:absolute;width:900px;height:900px;left:-420px;top:-480px;border-radius:50%;background:radial-gradient(closest-side,rgba(46,230,197,.28),rgba(46,230,197,0))}
-.kg2{position:absolute;width:900px;height:900px;right:-420px;bottom:-500px;border-radius:50%;background:radial-gradient(closest-side,rgba(232,194,106,.22),rgba(232,194,106,0))}
-.kdots{position:absolute;top:0;left:0;right:0;bottom:0;background-image:radial-gradient(rgba(255,255,255,.08) 1px,transparent 1.2px);background-size:26px 26px;
+.kg1,.kg2{position:absolute;border-radius:50%;opacity:.38}
+.kg1{width:60vmax;height:60vmax;left:-20vmax;top:-25vmax;background:radial-gradient(closest-side,#5eb0ff,rgba(94,176,255,0));-webkit-animation:kdrift 28s ease-in-out infinite alternate;animation:kdrift 28s ease-in-out infinite alternate}
+.kg2{width:50vmax;height:50vmax;right:-18vmax;bottom:-22vmax;background:radial-gradient(closest-side,#7c5cff,rgba(124,92,255,0));-webkit-animation:kdrift 34s ease-in-out infinite alternate-reverse;animation:kdrift 34s ease-in-out infinite alternate-reverse}
+@-webkit-keyframes kdrift{to{-webkit-transform:translate(8vmax,6vmax) scale(1.1)}}
+@keyframes kdrift{to{transform:translate(8vmax,6vmax) scale(1.1)}}
+.kdots{position:absolute;top:0;left:0;right:0;bottom:0;background-image:radial-gradient(rgba(255,255,255,.09) 1px,transparent 1.2px);background-size:26px 26px;
  -webkit-mask-image:radial-gradient(ellipse at 50% 50%,#000 30%,transparent 85%)}
 .app.kb{position:relative;z-index:1;display:grid;height:100%;padding:14px;grid-gap:12px;
  grid-template-columns:repeat(8,1fr);grid-template-rows:1fr 1fr .95fr .72fr;
  grid-template-areas:"h h h h h a a a" "h h h h h a a a" "p p p p p a a a" "m m c c s a a a"}
 .hero{grid-area:h}.prayers{grid-area:p}.agw{grid-area:a}.kbtn.msg{grid-area:m}.kbtn.pc{grid-area:c}.kbtn.set{grid-area:s}
+/* liquid glass tile (identical to the room) */
 .t,.p{position:relative;min-width:0;min-height:0;border-radius:24px;overflow:hidden;color:var(--text);
- background:rgba(255,255,255,.045);background:linear-gradient(160deg,rgba(255,255,255,.075),rgba(255,255,255,.02) 60%);
- border:1px solid rgba(255,255,255,.09);box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 18px 36px rgba(0,0,0,.35);
- -webkit-backdrop-filter:none;backdrop-filter:none}
+ background:rgba(255,255,255,.05);background:linear-gradient(160deg,rgba(255,255,255,.07),rgba(255,255,255,.02) 60%);
+ border:1px solid rgba(255,255,255,.09);box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 20px 40px rgba(0,0,0,.35);
+ -webkit-backdrop-filter:blur(24px) saturate(140%);backdrop-filter:blur(24px) saturate(140%)}
 /* hero */
 .hero{display:flex;flex-direction:column;justify-content:space-between;padding:20px 24px}
-.hero:before{content:"";position:absolute;left:24px;right:24px;top:0;height:1px;background:linear-gradient(90deg,rgba(46,230,197,0),var(--kacc2),rgba(46,230,197,0))}
+.hero:before{content:"";position:absolute;left:24px;right:24px;top:0;height:1px;background:linear-gradient(90deg,rgba(94,176,255,0),var(--kacc),rgba(94,176,255,0));opacity:.8}
 .hero-top{display:flex;justify-content:space-between;align-items:flex-start}
 .greg{font-size:15px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
 .hijri{font-size:21px;color:var(--kacc);margin-top:6px;font-weight:500}
@@ -226,56 +230,73 @@ body{background:#04060b}
 .next-row{display:flex;align-items:center;margin:0;max-width:none}
 .next{font-size:21px;color:var(--muted);margin-right:18px}
 .next b{color:var(--kacc);font-weight:600}
-.bar{height:3px;background:rgba(255,255,255,.08)}
+.bar{height:3px;background:rgba(255,255,255,.07)}
 .bar i{background:linear-gradient(90deg,var(--kacc2),var(--kacc));box-shadow:0 0 10px var(--kacc)}
-/* prayer cards */
+/* prayer cards: the NEXT one glows like an active room mode, past ones fade */
 .prayers{display:flex;margin:0 -6px;min-height:0}
-.p{flex:1;margin:0 6px;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:8px 4px;border-radius:22px}
+.p{flex:1;margin:0 6px;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:8px 4px;border-radius:24px;-webkit-transition:opacity .4s;transition:opacity .4s}
 .p .ar{font-size:20px;color:var(--muted);margin:0}
 .p .en{font-size:15px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:#c9d3e3;margin:2px 0 0}
 .p .tm{font-size:42px;font-weight:300;margin-top:2px;font-variant-numeric:tabular-nums}
 .p .tm small{font-size:16px;color:var(--muted)}
 .p .bell{top:10px;right:12px;font-size:12px;opacity:.6}
-.p.is-next{border-color:rgba(232,194,106,.7);box-shadow:0 0 0 1px rgba(232,194,106,.5),0 0 26px -6px var(--kacc)}
-.p.is-next .en{color:var(--kacc)}
-.p.current{color:var(--ink);border-color:transparent;background:linear-gradient(160deg,#f6dc98,#e8c26a);box-shadow:0 0 34px -4px var(--kacc)}
-.p.current .ar,.p.current .en,.p.current .tm small{color:rgba(28,21,5,.7)}
-/* agenda */
-.agw{margin:0;padding:18px 20px;border-radius:24px;max-height:none}
-.agw-h{margin-bottom:4px}
+.p.past{opacity:.38}
+.p.current{color:#fff;border-color:var(--kacc);
+ background:linear-gradient(160deg,rgba(255,255,255,.1),rgba(255,255,255,.02) 70%),radial-gradient(circle at 15% 10%,var(--kacc),rgba(94,176,255,0) 70%);
+ box-shadow:0 0 0 1px var(--kacc),0 0 34px -6px var(--kacc),inset 0 1px 0 rgba(255,255,255,.2)}
+.p.current .ar,.p.current .tm small{color:rgba(255,255,255,.8)}
+.p.current .en{color:#fff}
+.p.current:after{content:"NEXT";position:absolute;top:9px;left:50%;-webkit-transform:translateX(-50%);transform:translateX(-50%);font-size:9px;font-weight:700;letter-spacing:.2em;
+ padding:3px 8px;border-radius:20px;border:1px solid rgba(255,255,255,.7);color:#fff}
+/* agenda: big "up next" cards that fill the whole tile */
+.agw{margin:0;padding:16px;border-radius:24px;max-height:none;display:flex;flex-direction:column}
+.agw-h{margin:0 0 12px 4px;flex:none}
 .agw-h span{font-size:13px;letter-spacing:.2em;color:var(--muted)}
 .wk{display:flex;align-items:center;height:42px;padding:0 14px 0 10px;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:#dbe4f3;font-size:16px;cursor:pointer}
-.wk svg{width:20px;height:20px;margin-right:7px;color:var(--kacc2)}
-.agw .dlabel{font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:var(--kacc2);margin:14px 0 2px}
-.agw .item{padding:10px 0;font-size:22px;border-bottom:1px solid rgba(255,255,255,.07)}
-.agw .item .tm{width:82px;font-size:22px;font-weight:600;color:#fff;font-variant-numeric:tabular-nums}
-.agw .item .dot{width:12px;height:12px;border-radius:6px;margin-right:12px}
-.agw .item .tx small{font-size:17px}
+.wk svg{width:20px;height:20px;margin-right:7px;color:var(--kacc)}
+#agToday{flex:1;display:flex;flex-direction:column;min-height:0}
+.up{position:relative;flex:1;min-height:0;display:flex;flex-direction:column;justify-content:space-between;margin-top:10px;padding:16px 18px;border-radius:20px;overflow:hidden;
+ border:1px solid var(--c);background:rgba(255,255,255,.04);background:linear-gradient(160deg,rgba(255,255,255,.08),rgba(255,255,255,.02) 70%),radial-gradient(circle at 0% 0%,var(--c),rgba(0,0,0,0) 75%);
+ box-shadow:0 0 30px -10px var(--c),inset 0 1px 0 rgba(255,255,255,.15)}
+.up:first-child{margin-top:0}
+.up.first{flex:1.35}
+.up-top{display:flex;justify-content:space-between;align-items:flex-start}
+.up-day{padding-top:6px;font-size:13px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.85)}
+.up-in{flex:none;margin-left:8px;font-size:14px;font-weight:600;padding:4px 10px;border-radius:20px;background:rgba(255,255,255,.14)}
+.up-in:empty{display:none}
+.up.live .up-in{background:#22c55e;color:#04210f}
+.up-main{display:flex;align-items:center}
+.up-em{font-size:44px;line-height:1;margin-right:14px}
+.up-tx{flex:1;min-width:0;display:flex;flex-direction:column}
+.up-what{font-size:28px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.up-who{font-size:18px;color:rgba(255,255,255,.8);margin-top:2px}
+.up-tm{font-size:34px;font-weight:300;line-height:1;font-variant-numeric:tabular-nums;margin-left:10px}
+.up.first .up-em{font-size:58px}.up.first .up-what{font-size:34px}.up.first .up-tm{font-size:44px}
+.up-none{flex:1;display:flex;align-items:center;justify-content:center;text-align:center;font-size:24px;color:var(--muted);border:1px dashed rgba(255,255,255,.15);border-radius:20px}
 /* buttons */
 .kbtn{display:flex;align-items:center;justify-content:flex-start;padding:0 18px;cursor:pointer;text-align:left;font-family:inherit}
 .kbtn:active{-webkit-transform:scale(.965);transform:scale(.965)}
-.ki{display:flex;align-items:center;justify-content:center;width:52px;height:52px;border-radius:16px;flex:none;margin-right:14px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05)}
+.ki{display:flex;align-items:center;justify-content:center;width:52px;height:52px;border-radius:16px;flex:none;margin-right:14px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05)}
 .ki svg{width:26px;height:26px}
 .kt{display:flex;flex-direction:column}
 .kt small{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
 .kt b{font-size:24px;font-weight:600;margin-top:2px}
-.kbtn.msg{border-color:rgba(74,222,128,.55);box-shadow:0 0 0 1px rgba(74,222,128,.25),0 0 30px -8px #4ade80}
-.kbtn.msg .ki{color:#fff;background:#22c55e;border-color:transparent;box-shadow:0 0 18px rgba(34,197,94,.7)}
-.kbtn.pc{border-color:rgba(56,189,248,.55);box-shadow:0 0 0 1px rgba(56,189,248,.25),0 0 30px -8px #38bdf8}
-.kbtn.pc .ki{color:#fff;background:#0ea5e9;border-color:transparent;box-shadow:0 0 18px rgba(14,165,233,.7)}
+.kbtn.msg .ki{color:#fff;background:#22c55e;border-color:transparent;box-shadow:0 0 22px rgba(34,197,94,.6)}
+.kbtn.pc .ki{color:#fff;background:#38bdf8;border-color:transparent;box-shadow:0 0 22px rgba(56,189,248,.6)}
 .kbtn.set{justify-content:center;padding:0}
 .kbtn.set .ki{margin:0;color:#c9d3e3}
 /* pop-ups */
-.sheet{background:#0a0e18;border-color:rgba(255,255,255,.1);box-shadow:0 30px 80px rgba(0,0,0,.6)}
-.btn{background:var(--kacc)}
+.sheet{background:rgba(10,14,24,.88);-webkit-backdrop-filter:blur(30px) saturate(150%);backdrop-filter:blur(30px) saturate(150%);border-color:rgba(255,255,255,.1);box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 30px 80px rgba(0,0,0,.5)}
+.btn{background:var(--kacc);color:#04060b}
 .day{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.08)}
-.day.today{border-color:var(--kacc2);background:rgba(46,230,197,.07)}
-.day.today .dn{color:var(--kacc2)}
+.day.today{border-color:var(--kacc);background:rgba(94,176,255,.08)}
+.day.today .dn{color:var(--kacc)}
 @media (orientation:portrait){
- .app.kb{grid-template-columns:repeat(4,1fr);grid-template-rows:1.25fr .62fr 1.5fr .5fr;
+ .up{padding:12px 16px}
+ .app.kb{grid-template-columns:repeat(4,1fr);grid-template-rows:.95fr .52fr 2fr .42fr;
   grid-template-areas:"h h h h" "p p p p" "a a a a" "m m c s"}
  .prayers{flex-wrap:nowrap}.p{flex:1;margin:0 6px}
- .clock{font-size:140px}
+ .clock{font-size:120px}
  .p .tm{font-size:36px}
 }
 </style>
@@ -294,7 +315,7 @@ body{background:#04060b}
  </section>
  <div class="prayers" id="prayers"></div>
  <section class="t agw">
-  <div class="agw-h"><span>Today &amp; tomorrow</span><button class="wk" id="openWeek"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><b>Week</b></button></div>
+  <div class="agw-h"><span>Up next</span><button class="wk" id="openWeek"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><b>Week</b></button></div>
   <div id="agToday"></div>
  </section>
  <button class="t kbtn msg" id="openIc"><span class="ki"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 12.5h5"/></svg></span><span class="kt"><small>Message</small><b>Adam</b></span></button>
@@ -644,11 +665,12 @@ function tick() {
   $('next').querySelector('.count').textContent = fmtCountdown(nextTime - t);
   $('bar').style.width = Math.min(100, Math.max(0, (t - prevTime) / (nextTime - prevTime) * 100)).toFixed(2) + '%';
 
-  PRAYERS.forEach(function (pp) {
-    var el = cards[pp.k], cls = 'p' + (pp.sun ? ' sun' : '');
+  today.forEach(function (pp) {
+    var el = cards[pp.k], cls = 'p';
     if (!el) return;
-    if (currentKey === pp.k) cls += ' current';
-    else if (nextToday && next.k === pp.k) cls += ' is-next';
+    if (next.k === pp.k) cls += ' current';                       // the next prayer is the one lit up
+    else if (nextToday && pp.time.getTime() <= t) cls += ' past';  // already done today: dimmed
+    else if (!nextToday) cls += ' past';
     if (el.className !== cls) el.className = cls;
   });
 
@@ -797,25 +819,35 @@ function eventsOn(d) {
 function renderToday() {
   var box = $('agToday'); if (!box) return;
   box.innerHTML = '';
-  var now = new Date(), nowMin = now.getHours() * 60 + now.getMinutes();
-  [0, 1].forEach(function (off) {
+  var now = new Date(), nowMs = now.getTime(), list = [];
+  // the next 3 activities (still running or coming), looking up to 7 days ahead
+  for (var off = 0; off < 7 && list.length < 3; off++) {
     var d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + off);
-    var lab = document.createElement('div'); lab.className = 'dlabel';
-    lab.textContent = off ? 'Tomorrow · ' + d.toLocaleDateString('en-GB', { weekday: 'long' }) : 'Today';
-    box.appendChild(lab);
-    var evs = eventsOn(d);
-    if (!evs.length) { var n = document.createElement('div'); n.className = 'none'; n.textContent = 'Nothing planned'; box.appendChild(n); }
-    evs.forEach(function (e) {
-      var it = document.createElement('div');
-      it.className = 'item' + (!off && toMin(e.time) + 60 < nowMin ? ' past' : '');
-      it.innerHTML = '<span class="tm"></span><span class="dot"></span><span class="tx"></span>';
-      it.querySelector('.tm').textContent = fmtHM(e.time);
-      it.querySelector('.dot').style.background = COLORS[e.who] || '#475569';
-      it.querySelector('.tx').innerHTML = '';
-      it.querySelector('.tx').appendChild(document.createTextNode(agEmoji(e.what) + ' ' + e.what + ' '));
-      var sm = document.createElement('small'); sm.textContent = e.who; it.querySelector('.tx').appendChild(sm);
-      box.appendChild(it);
+    eventsOn(d).forEach(function (e) {
+      var st = new Date(d.getFullYear(), d.getMonth(), d.getDate(), +e.time.split(':')[0], +e.time.split(':')[1]).getTime();
+      if (st + 3600000 > nowMs && list.length < 3) list.push({ e: e, off: off, d: d, st: st });
     });
+  }
+  if (!list.length) { box.innerHTML = '<div class="up-none">Nothing planned this week</div>'; return; }
+  list.forEach(function (x, i) {
+    var c = COLORS[x.e.who] || '#475569', mins = Math.round((x.st - nowMs) / 60000), when;
+    if (mins <= 0) when = 'Now';
+    else if (mins < 60) when = 'in ' + mins + ' min';
+    else if (mins < 24 * 60) when = 'in ' + Math.floor(mins / 60) + ' h' + (mins % 60 ? ' ' + pad(mins % 60) : '');
+    else when = '';
+    var day = x.off === 0 ? 'Today' : x.off === 1 ? 'Tomorrow · ' + x.d.toLocaleDateString('en-GB', { weekday: 'long' }) : x.d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' });
+    var card = document.createElement('div');
+    card.className = 'up' + (i === 0 ? ' first' : '') + (mins <= 0 ? ' live' : '');
+    card.style.setProperty('--c', c);
+    card.innerHTML = '<div class="up-top"><span class="up-day"></span><span class="up-tm"></span></div>' +
+      '<div class="up-main"><span class="up-em"></span><span class="up-tx"><b class="up-what"></b><span class="up-who"></span></span><span class="up-in"></span></div>';
+    card.querySelector('.up-day').textContent = day;
+    card.querySelector('.up-in').textContent = when;
+    card.querySelector('.up-em').textContent = agEmoji(x.e.what);
+    card.querySelector('.up-what').textContent = x.e.what;
+    card.querySelector('.up-who').textContent = x.e.who;
+    card.querySelector('.up-tm').textContent = fmtHM(x.e.time);
+    box.appendChild(card);
   });
 }
 $('openWeek').onclick = function () { renderWeek(); $('weekSheet').classList.remove('hidden'); };
@@ -1086,7 +1118,7 @@ setInterval(loadWeather, 15 * 60 * 1000);
 <script>
 /* auto-update: every 5 min, look for a newer version of this page and reload (home-screen apps keep old copies otherwise) */
 (function () {
-  var PAGE_VER = '2026-11-22c';
+  var PAGE_VER = '2026-11-22d';
   function busy() { var a = document.getElementsByTagName('audio'); for (var i = 0; i < a.length; i++) if (!a[i].paused) return true; return false; }
   function check() {
     var x = new XMLHttpRequest();
