@@ -7,46 +7,39 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="My Room">
-<meta name="theme-color" content="#0a1222">
+<meta name="theme-color" content="#04060b">
 <title>My Room</title>
-<link rel="stylesheet" href="room.css?v=2026-11-22b">
+<link rel="stylesheet" href="room.css?v=2026-11-22c">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.js"></script>
 </head>
 <body data-mode="none">
 
-<div class="bg">
- <div class="bg-none"></div>
- <div class="bg-gaming"><div class="sun"></div><div class="horizon"></div><div class="grid"></div></div>
- <div class="bg-study"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
- <div class="bg-sleep"><div class="stars"></div><div class="moon"></div></div>
-</div>
+<div class="bg"><div class="glow g1"></div><div class="glow g2"></div><div class="dots"></div></div>
 
 <div class="app bento">
- <!-- hero: time + weather -->
  <section class="tile hero">
   <div class="hero-top">
    <div class="date" id="date"></div>
-   <button class="round" id="openSettings" aria-label="Settings">⚙︎</button>
+   <button class="round" id="openSettings" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg></button>
   </div>
   <div class="clock" id="clock">--:--</div>
+  <div class="secbar"><i id="secFill"></i></div>
   <div class="hero-bot">
    <div class="weather" id="weather"></div>
    <div class="chips" id="chips"></div>
   </div>
  </section>
 
- <!-- modes -->
- <button class="tile mode gaming" data-mode="gaming"><span class="ic">🎮</span><span class="tx"><b class="t">Gaming</b><span class="s">Wakes PC · Chrome + Call of Duty</span></span><i class="on-dot"></i></button>
- <button class="tile mode study" data-mode="study"><span class="ic">📖</span><span class="tx"><b class="t">Study</b><span class="s">Chrome · calm</span></span><i class="on-dot"></i></button>
- <button class="tile mode sleep" data-mode="sleep"><span class="ic">🌙</span><span class="tx"><b class="t">Sleep</b><span class="s">PC to sleep</span></span><i class="on-dot"></i></button>
- <button class="tile mode adam" data-mode="adam"><span class="ic">🧑</span><span class="tx"><b class="t">Adam</b><span class="s">PC on · my account</span></span><i class="on-dot"></i></button>
- <button class="tile mode dad" data-mode="dad"><span class="ic">👨</span><span class="tx"><b class="t">Dad</b><span class="s">PC on · Dad's account</span></span><i class="on-dot"></i></button>
+<button class="tile mode gaming" data-mode="gaming"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17.3 5H6.7a4 4 0 0 0-3.96 3.43L2 14.6A3 3 0 0 0 7.2 17l1.3-2h7l1.3 2a3 3 0 0 0 5.2-2.4l-.74-6.17A4 4 0 0 0 17.3 5z"/><path d="M6 11h4M8 9v4"/><circle cx="15.5" cy="11.5" r=".6"/><circle cx="17.8" cy="9.6" r=".6"/></svg></span><span class="tag">ACTIVE</span><span class="tx"><b class="t">Gaming</b><span class="s">Wakes PC · Chrome + Call of Duty</span></span><span class="wm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17.3 5H6.7a4 4 0 0 0-3.96 3.43L2 14.6A3 3 0 0 0 7.2 17l1.3-2h7l1.3 2a3 3 0 0 0 5.2-2.4l-.74-6.17A4 4 0 0 0 17.3 5z"/><path d="M6 11h4M8 9v4"/><circle cx="15.5" cy="11.5" r=".6"/><circle cx="17.8" cy="9.6" r=".6"/></svg></span></button>
+<button class="tile mode study" data-mode="study"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/><path d="M9 7h7M9 10.5h5"/></svg></span><span class="tag">ACTIVE</span><span class="tx"><b class="t">Study</b><span class="s">Chrome · focus</span></span><span class="wm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/><path d="M9 7h7M9 10.5h5"/></svg></span></button>
+<button class="tile mode sleep" data-mode="sleep"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/><path d="M16 4h3l-3 3h3"/></svg></span><span class="tag">ACTIVE</span><span class="tx"><b class="t">Sleep</b><span class="s">PC goes to sleep</span></span><span class="wm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/><path d="M16 4h3l-3 3h3"/></svg></span></button>
+<button class="tile mode adam" data-mode="adam"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg></span><span class="tag">ACTIVE</span><span class="tx"><b class="t">Adam</b><span class="s">PC on · my account</span></span><span class="wm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg></span></button>
+<button class="tile mode dad" data-mode="dad"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><circle cx="12" cy="9.5" r="2.5"/><path d="M8.3 16a4.2 4.2 0 0 1 7.4 0"/></svg></span><span class="tag">ACTIVE</span><span class="tx"><b class="t">Dad</b><span class="s">PC on · Dad's account</span></span><span class="wm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><circle cx="12" cy="9.5" r="2.5"/><path d="M8.3 16a4.2 4.2 0 0 1 7.4 0"/></svg></span></button>
 
- <!-- tools -->
- <button class="tile tool pc" id="tPc"><span class="ic">🖥️</span><span class="tx"><b class="t">PC</b><span class="pill" id="pcPill"><i></i><span id="pcPillT">PC</span></span></span></button>
- <button class="tile tool alarm" id="tAlarm"><span class="ic">⏰</span><b class="t">Alarms</b></button>
- <button class="tile tool timer" id="tTimer"><span class="ic">⏱️</span><b class="t">Timer</b></button>
- <button class="tile tool intercom" id="tIntercom"><span class="ic">📢</span><b class="t">Intercom</b></button>
+ <button class="tile tool pc" id="tPc"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></span><span class="tx"><b class="t">PC</b><span class="pill" id="pcPill"><i></i><span id="pcPillT">PC</span></span></span></button>
+ <button class="tile tool alarm" id="tAlarm"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M5 3 2 6M22 6l-3-3"/></svg></span><b class="t">Alarms</b></button>
+ <button class="tile tool timer" id="tTimer"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 22h14M5 2h14M17 22v-4.17a2 2 0 0 0-.59-1.42L12 12l-4.41 4.41A2 2 0 0 0 7 17.83V22M7 2v4.17a2 2 0 0 0 .59 1.42L12 12l4.41-4.41A2 2 0 0 0 17 6.17V2"/></svg></span><b class="t">Timer</b></button>
+ <button class="tile tool intercom" id="tIntercom"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5v3a1 1 0 0 0 1 1h2.5L12 19V5L6.5 9.5H4a1 1 0 0 0-1 1z"/><path d="M15.5 9a4.5 4.5 0 0 1 0 6M18.5 6a8.5 8.5 0 0 1 0 12"/></svg></span><b class="t">Intercom</b></button>
 </div>
 
 <!-- PC sheet -->
@@ -308,6 +301,7 @@
   function tick() {
     var d = new Date();
     $('clock').innerHTML = fmt(d, true);
+    $('secFill').style.width = (d.getSeconds() / 59 * 100) + '%';
     $('date').textContent = d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
     var key = d.toDateString() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
     if (key !== lastMinuteKey) {
@@ -370,7 +364,7 @@
 <script>
 /* auto-update: every 5 min, look for a newer version of this page and reload (home-screen apps keep old copies otherwise) */
 (function () {
-  var PAGE_VER = '2026-11-22b';
+  var PAGE_VER = '2026-11-22c';
   function busy() { var a = document.getElementsByTagName('audio'); for (var i = 0; i < a.length; i++) if (!a[i].paused) return true; return false; }
   function check() {
     var x = new XMLHttpRequest();
