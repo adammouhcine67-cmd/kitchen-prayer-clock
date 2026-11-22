@@ -153,7 +153,7 @@
   setInterval(function () { if (pcOnline && pcChan) pcChan.send({ type: 'broadcast', event: 'pc', payload: { a: 'status' } }); pcPill(); }, 20000);
   var PC_MSG = { ready: 'Getting your PC ready…', cod: 'Launching Call of Duty…', chrome: 'Opening Chrome…', sleep: 'Putting the PC to sleep…', study: 'Opening Chrome…' };
   // keys the ESP32 presses to switch to Dad's account and start Mortal Shell (tuned on the real PC)
-  var DAD_SEQ = 'wake,w2000,winl,w3000,space,w2500,tab,w700,tab,w700,enter,w20000,hotf6';
+  var DAD_SEQ = 'wake,w2000,winl,w3000,space,w2500,tab,w700,down,w700,tab,w500,tab,w500,tab,w500,tab,w500,enter,w25000,hotf6';
   PC_MSG.dad = "Switching to Dad's account…";
   function pcSend(a) {
     if (!pcChan || !pcOnline) { toast("Can't reach the PC helper"); return; }
