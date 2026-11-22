@@ -32,7 +32,11 @@ if (-not $cmd) {
     $items | ForEach-Object { Write-Host "   $($_.Name)" }
     return
 }
-$cmd | Set-Content -Encoding UTF8 (Join-Path $dir 'launch-mortal-shell.ps1')
+# only start it if it isn't already running (the ESP32 presses the key a few times while Dad signs in)
+@"
+if (Get-Process -ErrorAction SilentlyContinue | Where-Object { `$_.ProcessName -match 'mortal' }) { exit }
+$cmd
+"@ | Set-Content -Encoding UTF8 (Join-Path $dir 'launch-mortal-shell.ps1')
 
 # 2. Start Menu shortcut with the key combo
 $startMenu = Join-Path ([Environment]::GetFolderPath('Programs')) 'PC Helper'
