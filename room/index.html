@@ -41,6 +41,8 @@
     <button class="mode gaming" data-mode="gaming"><span class="e">🎮</span><span><div class="t">Gaming</div><div class="s">Wakes PC · Chrome + Call of Duty</div></span></button>
     <button class="mode study" data-mode="study"><span class="e">📖</span><span><div class="t">Study</div><div class="s">Wakes PC · opens Chrome · calm</div></span></button>
     <button class="mode sleep" data-mode="sleep"><span class="e">🌙</span><span><div class="t">Sleep</div><div class="s">Puts the PC to sleep · dark screen</div></span></button>
+    <button class="mode adam" data-mode="adam"><span class="e">🧑</span><span><div class="t">Adam</div><div class="s">PC on · Adam's account</div></span></button>
+    <button class="mode dad" data-mode="dad"><span class="e">👨</span><span><div class="t">Dad</div><div class="s">PC on · Dad's account</div></span></button>
    </div>
    <div class="tools">
     <button class="tool" id="tPc"><span class="e">🖥️</span>PC</button>
@@ -140,6 +142,10 @@
     pcChan = sb.channel('home-pc', { config: { broadcast: { self: false } } });
     pcChan.on('broadcast', { event: 'pc-status' }, function (m) {
       var p = m.payload || {}; pcSeen = Date.now(); pcAwake = !!p.bt;
+      // keep the mode honest (with a grace time, because the PC needs a moment to sleep / wake)
+      var since = Date.now() - modeAt;
+      if (pcAwake && S.mode === 'sleep' && since > 60000) setMode('none', true);          // PC is on again
+      if (!pcAwake && S.mode !== 'none' && S.mode !== 'sleep' && since > 240000) setMode('sleep', true); // PC went to sleep
       if (p.ack && waiting[p.ack]) { clearTimeout(waiting[p.ack]); delete waiting[p.ack]; }
       pcPill();
     });
@@ -155,11 +161,15 @@
   // keys the ESP32 presses to switch to Dad's account and start Mortal Shell (tuned on the real PC)
   var ADAM_SEQ = 'wake,w1000,winl,w2500,space,w1500,enter,w8000,hotf9,w10000,enter,w3000,enter,w3000,enter,w20000,hotf9';
   var DAD_SEQ = 'wake,w1000,winl,w2500,space,w1500,enter,w8000,hotf6,w10000,enter,w3000,enter,w3000,enter,w25000,hotf6,w15000,hotf6';
+  // account-only switches: the PC listener treats a double key press as 'switch account, open nothing'
+  var ADAM_ACCT_SEQ = 'wake,w1000,winl,w2500,space,w1500,enter,w8000,hotf9,w300,hotf9,w10000,enter,w3000,enter,w3000,enter';
+  var DAD_ACCT_SEQ  = 'wake,w1000,winl,w2500,space,w1500,enter,w8000,hotf6,w300,hotf6,w10000,enter,w3000,enter,w3000,enter';
+  PC_MSG.adamacct = "PC on · switching to Adam's account…"; PC_MSG.dadacct = "PC on · switching to Dad's account…";
   PC_MSG.dad = "Switching to Dad's account, then Mortal Shell…";
   function pcSend(a) {
     if (!pcChan || !pcOnline) { toast("Can't reach the PC helper"); return; }
     var id = Math.random().toString(36).slice(2, 8);
-    var seqs = { dad: DAD_SEQ, ready: ADAM_SEQ };
+    var seqs = { dad: DAD_SEQ, ready: ADAM_SEQ, adamacct: ADAM_ACCT_SEQ, dadacct: DAD_ACCT_SEQ };
     var payload = seqs[a] ? { a: 'seq', s: seqs[a], id: id } : { a: a, id: id };
     pcChan.send({ type: 'broadcast', event: 'pc', payload: payload });
     toast(PC_MSG[a] || 'Sent');
@@ -170,14 +180,15 @@
   });
 
   // ---------- room modes ----------
-  var MODE_PC = { gaming: 'ready', study: 'study', sleep: 'sleep' };
+  var MODE_PC = { gaming: 'ready', study: 'study', sleep: 'sleep', adam: 'adamacct', dad: 'dadacct' };
+  var modeAt = 0;   // when a mode was last picked on this iPad
   function setMode(m, send) {
     S.mode = (S.mode === m && !send) ? 'none' : m; saveS();
     document.body.setAttribute('data-mode', S.mode);
     Array.prototype.forEach.call(document.querySelectorAll('.mode'), function (b) { b.classList.toggle('active', b.getAttribute('data-mode') === S.mode); });
   }
   Array.prototype.forEach.call(document.querySelectorAll('.mode'), function (b) {
-    b.onclick = function () { var m = b.getAttribute('data-mode'); setMode(m, true); pcSend(MODE_PC[m]); };
+    b.onclick = function () { var m = b.getAttribute('data-mode'); modeAt = Date.now(); setMode(m, true); pcSend(MODE_PC[m]); };
   });
   setMode(S.mode, true);
 
