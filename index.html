@@ -67,7 +67,8 @@ main{flex:1;display:flex;align-items:center;min-height:0}
  white-space:nowrap;box-shadow:0 10px 40px rgba(0,0,0,.5);cursor:pointer}
 .warn-banner .x{margin-left:14px;color:var(--muted);font-size:22px}
 .ic-wrap{position:fixed;top:0;left:0;right:0;bottom:0;z-index:25;background:#0f1218}
-.ic-wrap.off{visibility:hidden;pointer-events:none}
+/* hidden = moved fully off-screen (old iPads let invisible frames steal taps) */
+.ic-wrap.off{left:-20000px;right:auto;width:100%;visibility:hidden;pointer-events:none}
 .ic-wrap iframe{border:0;width:100%;height:100%;display:block}
 .pc-btn{height:46px;border-radius:23px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:17px;font-weight:600;padding:0 16px;margin-right:10px;cursor:pointer}
 .pc-big{display:block;width:100%;font-size:22px;font-weight:600;color:#fff;border:0;border-radius:16px;padding:20px;margin:10px 0;cursor:pointer}
@@ -671,7 +672,9 @@ function pcSend(a, msg) {
 }
 // Intercom (runs all the time in a frame; shown on first start, on 📢, and when a message arrives)
 $('icFrame').src = 'intercom/?room=downstairs';
-$('openIc').onclick = function () { $('icWrap').classList.remove('off'); };
+function openIc(e) { if (e && e.preventDefault) e.preventDefault(); $('icWrap').classList.remove('off'); }
+$('openIc').onclick = openIc;
+$('openIc').addEventListener('touchend', openIc, false);
 window.addEventListener('message', function (e) {
   var d = e.data || {};
   if (d.intercom === 'started' || d.intercom === 'close') $('icWrap').classList.add('off');
