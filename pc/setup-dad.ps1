@@ -1,0 +1,51 @@
+# Dad's PC Helper setup — run this while signed in to DAD's account.
+# Makes the key combo Ctrl+Alt+Shift+F6 start Mortal Shell (the ESP32 presses it).
+# Nothing runs in the background. Safe to run again.
+
+$dir = Join-Path $env:LOCALAPPDATA 'PCHelper'
+New-Item -ItemType Directory -Force -Path $dir | Out-Null
+Write-Host ""
+Write-Host "=== Dad's PC Helper setup ===" -ForegroundColor Cyan
+
+function Test-GameName($s) { (($s -replace '[^A-Za-z0-9]', '').ToLower()) -like '*mortalshell*' }
+
+# 1. Find Mortal Shell: desktop shortcut first, then the Start menu apps
+$desktops = @([Environment]::GetFolderPath('Desktop'), [Environment]::GetFolderPath('CommonDesktopDirectory'),
+              (Join-Path $env:USERPROFILE 'OneDrive\Desktop')) | Where-Object { $_ -and (Test-Path $_) } | Select-Object -Unique
+$items = foreach ($d in $desktops) { Get-ChildItem -LiteralPath $d -File -Force -ErrorAction SilentlyContinue }
+$game = $items | Where-Object { Test-GameName $_.BaseName } |
+        Sort-Object { $_.Name -match '2' } -Descending | Select-Object -First 1
+$cmd = $null
+if ($game) {
+    $cmd = "Start-Process -FilePath '$($game.FullName -replace "'", "''")'"
+    Write-Host "[ok] Mortal Shell shortcut: $($game.Name)" -ForegroundColor Green
+} else {
+    $app = Get-StartApps -ErrorAction SilentlyContinue | Where-Object { Test-GameName $_.Name } | Select-Object -First 1
+    if ($app) {
+        $cmd = "Start-Process explorer.exe -ArgumentList 'shell:AppsFolder\$($app.AppID)'"
+        Write-Host "[ok] Mortal Shell app: $($app.Name)" -ForegroundColor Green
+    }
+}
+if (-not $cmd) {
+    Write-Host "Couldn't find Mortal Shell." -ForegroundColor Red
+    Write-Host "Files on this desktop:" -ForegroundColor Yellow
+    $items | ForEach-Object { Write-Host "   $($_.Name)" }
+    return
+}
+$cmd | Set-Content -Encoding UTF8 (Join-Path $dir 'launch-mortal-shell.ps1')
+
+# 2. Start Menu shortcut with the key combo
+$startMenu = Join-Path ([Environment]::GetFolderPath('Programs')) 'PC Helper'
+New-Item -ItemType Directory -Force -Path $startMenu | Out-Null
+$shell = New-Object -ComObject WScript.Shell
+$lnk = $shell.CreateShortcut((Join-Path $startMenu 'Launch Mortal Shell.lnk'))
+$lnk.TargetPath = "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe"
+$lnk.Arguments = "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$(Join-Path $dir 'launch-mortal-shell.ps1')`""
+$lnk.WindowStyle = 7
+$lnk.Hotkey = 'Ctrl+Alt+Shift+F6'
+$lnk.Save()
+Write-Host "[ok] Launch Mortal Shell  ->  Ctrl+Alt+Shift+F6" -ForegroundColor Green
+
+Write-Host ""
+Write-Host "Done! Test it: press Ctrl+Alt+Shift+F6 - Mortal Shell should start." -ForegroundColor Cyan
+Write-Host ""
