@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
-<meta name="theme-color" content="#0a1222">
+<meta name="theme-color" content="#04060b">
 <meta name="apple-mobile-web-app-title" content="Prayer Times">
 <title>Kitchen Prayer Clock</title>
 <style>
@@ -196,29 +196,110 @@ main{margin:6px 0 14px}
 .pick{margin:0 5px 10px;padding:14px 18px;border-radius:16px;border:2px solid var(--line);background:#0c172b;color:var(--text);font-size:19px;font-weight:600;cursor:pointer}
 .pick.sel{border-color:var(--gold);background:rgba(232,194,106,.18)}
 .days label{padding:10px 14px;border:2px solid var(--line);border-radius:14px;margin:0 8px 8px 0;font-size:18px}
+/* ===== v3 futuristic look (same style as the room iPad); kept simple for the old iPad: no blur, no animation ===== */
+:root{--kacc:#e8c26a;--kacc2:#2ee6c5}
+html,body{background:#04060b}
+body{background:#04060b}
+.kbg{position:fixed;top:0;left:0;right:0;bottom:0;z-index:0;overflow:hidden;background:#04060b;background:radial-gradient(ellipse at 50% 0%,#0b1020 0%,#04060b 70%)}
+.kg1{position:absolute;width:900px;height:900px;left:-420px;top:-480px;border-radius:50%;background:radial-gradient(closest-side,rgba(46,230,197,.28),rgba(46,230,197,0))}
+.kg2{position:absolute;width:900px;height:900px;right:-420px;bottom:-500px;border-radius:50%;background:radial-gradient(closest-side,rgba(232,194,106,.22),rgba(232,194,106,0))}
+.kdots{position:absolute;top:0;left:0;right:0;bottom:0;background-image:radial-gradient(rgba(255,255,255,.08) 1px,transparent 1.2px);background-size:26px 26px;
+ -webkit-mask-image:radial-gradient(ellipse at 50% 50%,#000 30%,transparent 85%)}
+.app.kb{position:relative;z-index:1;display:grid;height:100%;padding:14px;grid-gap:12px;
+ grid-template-columns:repeat(8,1fr);grid-template-rows:1fr 1fr .95fr .72fr;
+ grid-template-areas:"h h h h h a a a" "h h h h h a a a" "p p p p p a a a" "m m c c s a a a"}
+.hero{grid-area:h}.prayers{grid-area:p}.agw{grid-area:a}.kbtn.msg{grid-area:m}.kbtn.pc{grid-area:c}.kbtn.set{grid-area:s}
+.t,.p{position:relative;min-width:0;min-height:0;border-radius:24px;overflow:hidden;color:var(--text);
+ background:rgba(255,255,255,.045);background:linear-gradient(160deg,rgba(255,255,255,.075),rgba(255,255,255,.02) 60%);
+ border:1px solid rgba(255,255,255,.09);box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 18px 36px rgba(0,0,0,.35);
+ -webkit-backdrop-filter:none;backdrop-filter:none}
+/* hero */
+.hero{display:flex;flex-direction:column;justify-content:space-between;padding:20px 24px}
+.hero:before{content:"";position:absolute;left:24px;right:24px;top:0;height:1px;background:linear-gradient(90deg,rgba(46,230,197,0),var(--kacc2),rgba(46,230,197,0))}
+.hero-top{display:flex;justify-content:space-between;align-items:flex-start}
+.greg{font-size:15px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+.hijri{font-size:21px;color:var(--kacc);margin-top:6px;font-weight:500}
+.wmini{font-size:34px;margin:0;white-space:nowrap}
+.wmini .wt{font-size:34px;font-weight:300;margin-left:8px}
+.clock{text-align:center;font-size:150px;font-weight:200;letter-spacing:-5px;line-height:1;
+ color:#fff;background:linear-gradient(180deg,#fff 30%,rgba(255,255,255,.55));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.next-row{display:flex;align-items:center;margin:0;max-width:none}
+.next{font-size:21px;color:var(--muted);margin-right:18px}
+.next b{color:var(--kacc);font-weight:600}
+.bar{height:3px;background:rgba(255,255,255,.08)}
+.bar i{background:linear-gradient(90deg,var(--kacc2),var(--kacc));box-shadow:0 0 10px var(--kacc)}
+/* prayer cards */
+.prayers{display:flex;margin:0 -6px;min-height:0}
+.p{flex:1;margin:0 6px;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:8px 4px;border-radius:22px}
+.p .ar{font-size:20px;color:var(--muted);margin:0}
+.p .en{font-size:15px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:#c9d3e3;margin:2px 0 0}
+.p .tm{font-size:42px;font-weight:300;margin-top:2px;font-variant-numeric:tabular-nums}
+.p .tm small{font-size:16px;color:var(--muted)}
+.p .bell{top:10px;right:12px;font-size:12px;opacity:.6}
+.p.is-next{border-color:rgba(232,194,106,.7);box-shadow:0 0 0 1px rgba(232,194,106,.5),0 0 26px -6px var(--kacc)}
+.p.is-next .en{color:var(--kacc)}
+.p.current{color:var(--ink);border-color:transparent;background:linear-gradient(160deg,#f6dc98,#e8c26a);box-shadow:0 0 34px -4px var(--kacc)}
+.p.current .ar,.p.current .en,.p.current .tm small{color:rgba(28,21,5,.7)}
+/* agenda */
+.agw{margin:0;padding:18px 20px;border-radius:24px;max-height:none}
+.agw-h{margin-bottom:4px}
+.agw-h span{font-size:13px;letter-spacing:.2em;color:var(--muted)}
+.wk{display:flex;align-items:center;height:42px;padding:0 14px 0 10px;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:#dbe4f3;font-size:16px;cursor:pointer}
+.wk svg{width:20px;height:20px;margin-right:7px;color:var(--kacc2)}
+.agw .dlabel{font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:var(--kacc2);margin:14px 0 2px}
+.agw .item{padding:10px 0;font-size:22px;border-bottom:1px solid rgba(255,255,255,.07)}
+.agw .item .tm{width:82px;font-size:22px;font-weight:600;color:#fff;font-variant-numeric:tabular-nums}
+.agw .item .dot{width:12px;height:12px;border-radius:6px;margin-right:12px}
+.agw .item .tx small{font-size:17px}
+/* buttons */
+.kbtn{display:flex;align-items:center;justify-content:flex-start;padding:0 18px;cursor:pointer;text-align:left;font-family:inherit}
+.kbtn:active{-webkit-transform:scale(.965);transform:scale(.965)}
+.ki{display:flex;align-items:center;justify-content:center;width:52px;height:52px;border-radius:16px;flex:none;margin-right:14px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05)}
+.ki svg{width:26px;height:26px}
+.kt{display:flex;flex-direction:column}
+.kt small{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.kt b{font-size:24px;font-weight:600;margin-top:2px}
+.kbtn.msg{border-color:rgba(74,222,128,.55);box-shadow:0 0 0 1px rgba(74,222,128,.25),0 0 30px -8px #4ade80}
+.kbtn.msg .ki{color:#fff;background:#22c55e;border-color:transparent;box-shadow:0 0 18px rgba(34,197,94,.7)}
+.kbtn.pc{border-color:rgba(56,189,248,.55);box-shadow:0 0 0 1px rgba(56,189,248,.25),0 0 30px -8px #38bdf8}
+.kbtn.pc .ki{color:#fff;background:#0ea5e9;border-color:transparent;box-shadow:0 0 18px rgba(14,165,233,.7)}
+.kbtn.set{justify-content:center;padding:0}
+.kbtn.set .ki{margin:0;color:#c9d3e3}
+/* pop-ups */
+.sheet{background:#0a0e18;border-color:rgba(255,255,255,.1);box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.btn{background:var(--kacc)}
+.day{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.08)}
+.day.today{border-color:var(--kacc2);background:rgba(46,230,197,.07)}
+.day.today .dn{color:var(--kacc2)}
+@media (orientation:portrait){
+ .app.kb{grid-template-columns:repeat(4,1fr);grid-template-rows:1.25fr .62fr 1.5fr .5fr;
+  grid-template-areas:"h h h h" "p p p p" "a a a a" "m m c s"}
+ .prayers{flex-wrap:nowrap}.p{flex:1;margin:0 6px}
+ .clock{font-size:140px}
+ .p .tm{font-size:36px}
+}
 </style>
 </head>
 <body>
-<div class="app">
- <header>
-  <div class="dates"><div class="greg" id="greg"></div><div class="hijri" id="hijri"></div></div>
-  <div class="loc"><span id="cityName" class="hidden"></span>
-   <button class="big-btn msg" id="openIc"><span class="bi">💬</span><span>Message<br><b>Adam</b></span></button>
-   <button class="big-btn pc" id="openPc"><span class="bi">🖥️</span><span>Adam's<br><b>PC</b></span></button>
-   <button class="icon-btn" id="openSettings" aria-label="Settings">⚙︎</button></div>
- </header>
- <main>
-  <div class="left">
-   <div class="clock" id="clock">--:--</div>
+<div class="kbg"><div class="kg1"></div><div class="kg2"></div><div class="kdots"></div></div>
+<div class="app kb">
+ <section class="t hero">
+  <div class="hero-top">
+   <div class="dates"><div class="greg" id="greg"></div><div class="hijri" id="hijri"></div></div>
    <div class="wmini" id="weather"></div>
-   <div class="next-row"><div class="next" id="next"></div><div class="bar"><i id="bar"></i></div></div>
   </div>
-  <div class="agw">
-   <div class="agw-h"><span>Today &amp; tomorrow</span><button class="pc-btn" id="openWeek" style="margin-right:0">📅 Week</button></div>
-   <div id="agToday"></div>
-  </div>
- </main>
+  <div class="clock" id="clock">--:--</div>
+  <div class="next-row"><div class="next" id="next"></div><div class="bar"><i id="bar"></i></div></div>
+  <span id="cityName" class="hidden"></span>
+ </section>
  <div class="prayers" id="prayers"></div>
+ <section class="t agw">
+  <div class="agw-h"><span>Today &amp; tomorrow</span><button class="wk" id="openWeek"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><b>Week</b></button></div>
+  <div id="agToday"></div>
+ </section>
+ <button class="t kbtn msg" id="openIc"><span class="ki"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 12.5h5"/></svg></span><span class="kt"><small>Message</small><b>Adam</b></span></button>
+ <button class="t kbtn pc" id="openPc"><span class="ki"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></span><span class="kt"><small>Adam's</small><b>PC</b></span></button>
+ <button class="t kbtn set" id="openSettings" aria-label="Settings"><span class="ki"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg></span></button>
 </div>
 
 <div class="warn-banner hidden" id="warnBanner"><span class="pulse">🕐</span> <span id="warnText"></span> <span class="x">✕</span></div>
@@ -1005,7 +1086,7 @@ setInterval(loadWeather, 15 * 60 * 1000);
 <script>
 /* auto-update: every 5 min, look for a newer version of this page and reload (home-screen apps keep old copies otherwise) */
 (function () {
-  var PAGE_VER = '2026-11-22b';
+  var PAGE_VER = '2026-11-22c';
   function busy() { var a = document.getElementsByTagName('audio'); for (var i = 0; i < a.length; i++) if (!a[i].paused) return true; return false; }
   function check() {
     var x = new XMLHttpRequest();
