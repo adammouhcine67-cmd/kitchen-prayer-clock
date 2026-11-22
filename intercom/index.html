@@ -21,6 +21,7 @@
   header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
   header h1 { margin: 0; font-size: 24px; font-weight: 700; }
   .hbtns { display: flex; gap: 10px; }
+  .gear.mic { margin-right: 10px; width: auto; padding: 0 16px; font-size: 17px; font-weight: 700; color: #fff; background: #b45309; }
   .gear { background: #1c212b; border: 0; color: #9aa3b5; font-size: 22px; width: 48px; height: 48px; border-radius: 14px; }
   .status { font-size: 13px; color: #9aa3b5; display: flex; align-items: center; margin-top: 4px; }
   .status .dot { margin-right: 8px; }
@@ -121,6 +122,7 @@
       <div class="status"><span class="dot wait" id="netDot"></span><span id="netText">Connecting…</span></div>
     </div>
     <div class="hbtns">
+      <button class="gear mic hidden" id="micBtn" title="Turn on microphone">🎤 Turn on mic</button>
       <button class="gear" id="gearBtn" title="Settings (hold)">⚙️</button>
       <button class="gear hidden" id="closeBtn" title="Close">✕</button>
     </div>
@@ -280,8 +282,34 @@
     myId = myRoom + "-" + uid();
     sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     connectChannel();
+    $("micBtn").classList.toggle("hidden", !!localStream);
     tellParent("started", { voice: !!localStream });
   }
+
+  // ---------- MIC PERMISSION (button, in case the first question was missed) ----------
+  function oldIOS() { var m = navigator.userAgent.match(/OS (\d+)_/); return /iP(ad|hone|od)/.test(navigator.userAgent) && m && +m[1] < 13; }
+  $("micBtn").onclick = function () {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.RTCPeerConnection) {
+      setSendStatus(oldIOS() && window.navigator.standalone
+        ? "This iPad can only use the mic in Safari, not from the Home Screen app. Open is.gd/kamkitchen in Safari for voice."
+        : "This browser can't use the microphone — messages still work.", true);
+      return;
+    }
+    setSendStatus("Asking for the microphone…", true);
+    navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } })
+      .then(function (stream) {
+        localStream = stream;
+        stream.getAudioTracks()[0].enabled = false;
+        $("micBtn").classList.add("hidden");
+        setSendStatus("✓ Microphone on — voice is ready");
+        if (channel) { channel.track({ room: myRoom, id: myId, at: Date.now(), voice: true }); onSync(); }
+        updateStatus();
+        tellParent("mic", { on: true });
+      })
+      .catch(function (err) {
+        setSendStatus("Microphone still blocked (" + (err && err.name ? err.name : err) + "). On the iPad: Settings → Safari → Microphone → Allow, then tap 🎤 again.", true);
+      });
+  };
 
   function otherRooms() { return ROOMS.filter(function (r) { return r.id !== myRoom; }); }
 
