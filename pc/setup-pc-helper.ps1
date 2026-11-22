@@ -63,6 +63,10 @@ if (`$chrome -and (Test-Path `$chrome)) {
 "@
 $chromeScript | Set-Content -Encoding UTF8 (Join-Path $dir 'open-chrome.ps1')
 @"
+# run at most once per 2 minutes (the ESP32 may press the key twice while switching accounts)
+`$stamp = Join-Path `$env:LOCALAPPDATA 'PCHelper\last-ready.txt'
+if ((Test-Path `$stamp) -and ((Get-Date) - (Get-Item `$stamp).LastWriteTime).TotalSeconds -lt 120) { exit }
+Set-Content `$stamp (Get-Date)
 $chromeScript
 Start-Sleep -Seconds 2
 $codCmd

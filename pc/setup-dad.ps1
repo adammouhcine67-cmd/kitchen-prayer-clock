@@ -50,6 +50,17 @@ $lnk.Hotkey = 'Ctrl+Alt+Shift+F6'
 $lnk.Save()
 Write-Host "[ok] Launch Mortal Shell  ->  Ctrl+Alt+Shift+F6" -ForegroundColor Green
 
+# 3. Ctrl+Alt+Shift+F9 in Dad's account = switch back to Adam (so Adam's "Get PC ready" always lands in Adam's account)
+"Start-Process schtasks.exe -ArgumentList '/run','/tn','PCHelper-SwitchToAdam' -WindowStyle Hidden" |
+    Set-Content -Encoding UTF8 (Join-Path $dir 'switch-to-adam.ps1')
+$lnk2 = $shell.CreateShortcut((Join-Path $startMenu 'Switch to Adam.lnk'))
+$lnk2.TargetPath = "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe"
+$lnk2.Arguments = "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$(Join-Path $dir 'switch-to-adam.ps1')`""
+$lnk2.WindowStyle = 7
+$lnk2.Hotkey = 'Ctrl+Alt+Shift+F9'
+$lnk2.Save()
+Write-Host "[ok] Switch to Adam  ->  Ctrl+Alt+Shift+F9 (in Dad's account)" -ForegroundColor Green
+
 Write-Host ""
 Write-Host "Done! Test it: press Ctrl+Alt+Shift+F6 - Mortal Shell should start." -ForegroundColor Cyan
 Write-Host ""
