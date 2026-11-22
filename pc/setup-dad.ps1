@@ -19,6 +19,17 @@ $cmd = $null
 if ($game) {
     $cmd = "Start-Process -FilePath '$($game.FullName -replace "'", "''")'"
     Write-Host "[ok] Mortal Shell shortcut: $($game.Name)" -ForegroundColor Green
+    # Stop the "Do you want to allow this app to make changes?" popup for the game
+    # (runs it with Dad's normal rights; only affects Dad's account)
+    $exe = $null
+    if ($game.Extension -eq '.lnk') { $exe = (New-Object -ComObject WScript.Shell).CreateShortcut($game.FullName).TargetPath }
+    elseif ($game.Extension -eq '.exe') { $exe = $game.FullName }
+    if ($exe -and $exe -like '*.exe' -and (Test-Path $exe)) {
+        $layers = 'HKCU:\Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers'
+        New-Item -Path $layers -Force | Out-Null
+        Set-ItemProperty -Path $layers -Name $exe -Value '~ RUNASINVOKER'
+        Write-Host "[ok] No more 'allow changes?' popup for $(Split-Path $exe -Leaf)" -ForegroundColor Green
+    }
 } else {
     $app = Get-StartApps -ErrorAction SilentlyContinue | Where-Object { Test-GameName $_.Name } | Select-Object -First 1
     if ($app) {
