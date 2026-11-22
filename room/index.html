@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="My Room">
 <meta name="theme-color" content="#04060b">
 <title>My Room</title>
-<link rel="stylesheet" href="room.css?v=2026-11-22c">
+<link rel="stylesheet" href="room.css?v=2026-11-22f">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.js"></script>
 </head>
 <body data-mode="none">
@@ -20,7 +20,8 @@
  <section class="tile hero">
   <div class="hero-top">
    <div class="date" id="date"></div>
-   <button class="round" id="openSettings" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg></button>
+   <div class="hero-btns"><button class="ai-btn" id="tAi" aria-label="Talk to Jarvis"><span class="orb mini"><i></i><i></i><b></b></span><span>Jarvis</span></button>
+   <button class="round" id="openSettings" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg></button></div>
   </div>
   <div class="clock" id="clock">--:--</div>
   <div class="secbar"><i id="secFill"></i></div>
@@ -40,6 +41,18 @@
  <button class="tile tool alarm" id="tAlarm"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M5 3 2 6M22 6l-3-3"/></svg></span><b class="t">Alarms</b></button>
  <button class="tile tool timer" id="tTimer"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 22h14M5 2h14M17 22v-4.17a2 2 0 0 0-.59-1.42L12 12l-4.41 4.41A2 2 0 0 0 7 17.83V22M7 2v4.17a2 2 0 0 0 .59 1.42L12 12l4.41-4.41A2 2 0 0 0 17 6.17V2"/></svg></span><b class="t">Timer</b></button>
  <button class="tile tool intercom" id="tIntercom"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5v3a1 1 0 0 0 1 1h2.5L12 19V5L6.5 9.5H4a1 1 0 0 0-1 1z"/><path d="M15.5 9a4.5 4.5 0 0 1 0 6M18.5 6a8.5 8.5 0 0 1 0 12"/></svg></span><b class="t">Intercom</b></button>
+</div>
+
+<!-- Jarvis (live voice chat with Gemini) -->
+<div class="ai hidden" id="aiSheet">
+ <div class="ai-top"><div class="ai-brand">JARVIS</div><button class="ai-x" id="aiClose" aria-label="Close">✕</button></div>
+ <div class="ai-mid">
+  <button class="orb" id="aiOrb" aria-label="Interrupt"><i></i><i></i><b></b></button>
+  <div class="ai-state" id="aiState"></div>
+  <div class="ai-hint" id="aiHint">Just talk. Tap the orb to interrupt.</div>
+ </div>
+ <div class="ai-log" id="aiLog"></div>
+ <button class="ai-end" id="aiEnd">End</button>
 </div>
 
 <!-- PC sheet -->
@@ -123,10 +136,10 @@
   // ---------- PC (through the PC Helper / ESP32) ----------
   var SB_URL = 'https://kughalejiydqtseuyrni.supabase.co';
   var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt1Z2hhbGVqaXlkcXRzZXV5cm5pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2MzY1NTAsImV4cCI6MjA5NjIxMjU1MH0.Eti8hM2qhHJnhaDmzVR0I2K7zOEiK8H2KEBJeWJiLE8';
-  var pcChan = null, pcOnline = false, pcAwake = false, pcSeen = 0, waiting = {};
+  var sbClient = null, pcChan = null, pcOnline = false, pcAwake = false, pcSeen = 0, waiting = {};
   function pcConnect() {
     if (!window.supabase) return;
-    var sb = window.supabase.createClient(SB_URL, SB_KEY);
+    var sb = window.supabase.createClient(SB_URL, SB_KEY); sbClient = sb;
     pcChan = sb.channel('home-pc', { config: { broadcast: { self: false } } });
     pcChan.on('broadcast', { event: 'pc-status' }, function (m) {
       var p = m.payload || {}; pcSeen = Date.now(); pcAwake = !!p.bt;
@@ -196,7 +209,7 @@
   function loadWeather() {
     if (S.lat === null) { renderWeather(null); return; }
     fetch('https://api.open-meteo.com/v1/forecast?latitude=' + S.lat + '&longitude=' + S.lng +
-      '&current=temperature_2m,weather_code,is_day&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&forecast_days=1')
+      '&current=temperature_2m,weather_code,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&hourly=temperature_2m,precipitation_probability,weather_code&timezone=auto&forecast_days=3')
       .then(function (r) { return r.json(); }).then(function (j) { store('room-weather', j); renderWeather(j); })
       .catch(function () { renderWeather(store('room-weather')); });
   }
@@ -354,6 +367,214 @@
     else if (d.intercom === 'incoming') ic.classList.remove('hidden');
   });
 
+  // ---------- prayer times (for Jarvis), from aladhan.com, once a day ----------
+  var prayersToday = null;
+  function loadPrayers() {
+    if (S.lat === null) return;
+    var d = new Date(), key = d.toDateString() + S.lat + ',' + S.lng, c = store('room-prayers');
+    if (c && c.key === key) { prayersToday = c.t; return; }
+    fetch('https://api.aladhan.com/v1/timings/' + pad(d.getDate()) + '-' + pad(d.getMonth() + 1) + '-' + d.getFullYear() +
+      '?latitude=' + S.lat + '&longitude=' + S.lng + '&method=3')
+      .then(function (r) { return r.json(); }).then(function (j) {
+        var t = j.data.timings; prayersToday = { Fajr: t.Fajr, Sunrise: t.Sunrise, Dhuhr: t.Dhuhr, Asr: t.Asr, Maghrib: t.Maghrib, Isha: t.Isha };
+        store('room-prayers', { key: key, t: prayersToday });
+      }).catch(function () {});
+  }
+
+  // ---------- Jarvis: live voice chat with Gemini (its real voice) ----------
+  var AI_URL = SB_URL + '/functions/v1/jarvis';
+  var VOICE = 'Charon';   // Gemini voice
+  var WS_URL = 'wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContentConstrained?access_token=';
+  var LIVE_TOOLS = [{ functionDeclarations: [
+    { name: 'set_mode', description: 'Change the room mode (also controls the PC). gaming = wake PC, sign in Adam, Chrome + Call of Duty. study = PC on with Chrome. sleep = PC to sleep. adam = PC on in Adam\'s account. dad = PC on in Dad\'s account. none = clear.',
+      parameters: { type: 'OBJECT', properties: { mode: { type: 'STRING', enum: ['gaming', 'study', 'sleep', 'adam', 'dad', 'none'] } }, required: ['mode'] } },
+    { name: 'pc_action', description: 'One PC action: ready (wake + sign in Adam), cod (Call of Duty), chrome, sleep, dad (switch to Dad and start Mortal Shell), study.',
+      parameters: { type: 'OBJECT', properties: { action: { type: 'STRING', enum: ['ready', 'cod', 'chrome', 'sleep', 'dad', 'study'] } }, required: ['action'] } },
+    { name: 'set_alarm', description: 'Set a daily alarm on this iPad.', parameters: { type: 'OBJECT', properties: { time: { type: 'STRING', description: '24-hour HH:MM' }, label: { type: 'STRING' } }, required: ['time'] } },
+    { name: 'delete_alarms', description: 'Delete all alarms.', parameters: { type: 'OBJECT', properties: {} } },
+    { name: 'set_timer', description: 'Start a countdown timer.', parameters: { type: 'OBJECT', properties: { minutes: { type: 'NUMBER' }, label: { type: 'STRING' } }, required: ['minutes'] } },
+    { name: 'cancel_timers', description: 'Stop all timers.', parameters: { type: 'OBJECT', properties: {} } },
+    { name: 'send_kitchen_message', description: 'Send a short text message to the kitchen iPad (Dad reads it, it is read out loud).', parameters: { type: 'OBJECT', properties: { text: { type: 'STRING' } }, required: ['text'] } }
+  ] }];
+  function aiState(st, msg) {
+    var hid = $('aiSheet').classList.contains('hidden');
+    $('aiSheet').className = 'ai' + (st ? ' ' + st : '') + (hid ? ' hidden' : '');
+    $('aiOrb').className = 'orb' + (st ? ' ' + st : '');
+    $('aiState').textContent = msg;
+  }
+  var capMe = null, capAi = null;
+  function caption(who, text) {
+    var log = $('aiLog');
+    if (who === 'me') { if (!capMe) { capMe = document.createElement('div'); capMe.className = 'm m-me'; log.appendChild(capMe); capAi = null; } capMe.textContent += text; }
+    else { if (!capAi) { capAi = document.createElement('div'); capAi.className = 'm m-ai'; log.appendChild(capAi); capMe = null; } capAi.textContent += text; }
+    while (log.childNodes.length > 6) log.removeChild(log.firstChild);
+    log.scrollTop = log.scrollHeight;
+  }
+  function aiCtx() {
+    var w = store('room-weather'), wtxt = null;
+    if (w && w.current) {
+      wtxt = { now: Math.round(w.current.temperature_2m) + 'C, ' + wx(w.current.weather_code, w.current.is_day)[1], days: [] };
+      if (w.daily) for (var i = 0; i < w.daily.time.length; i++) wtxt.days.push(w.daily.time[i] + ': ' + wx(w.daily.weather_code ? w.daily.weather_code[i] : 0, 1)[1] + ', ' + Math.round(w.daily.temperature_2m_min[i]) + '-' + Math.round(w.daily.temperature_2m_max[i]) + 'C, rain ' + w.daily.precipitation_probability_max[i] + '%');
+      if (w.hourly) { var from = new Date(Date.now() - 3600000), nx = []; for (var h = 0; h < w.hourly.time.length && nx.length < 12; h++) if (new Date(w.hourly.time[h]) >= from) nx.push(w.hourly.time[h].slice(11, 16) + ' ' + Math.round(w.hourly.temperature_2m[h]) + 'C rain ' + w.hourly.precipitation_probability[h] + '%'); wtxt.nextHours = nx; }
+    }
+    return {
+      now: new Date().toString(), city: S.city || 'not set', weather: wtxt, prayersToday: prayersToday,
+      roomMode: S.mode, pc: (Date.now() - pcSeen < 45000) ? (pcAwake ? 'on' : 'asleep') : 'unknown',
+      alarms: alarms.map(function (a) { return a.t + (a.label ? ' ' + a.label : '') + (a.on ? '' : ' (off)'); }),
+      timers: timers.map(function (t) { return t.label + ': ' + Math.ceil((t.end - Date.now()) / 60000) + ' min left'; })
+    };
+  }
+  function sysPrompt() {
+    return 'You are Jarvis, the voice assistant on the iPad in Adam\'s bedroom, talking out loud in a live voice chat. ' +
+      'The family: Adam (teenager, gamer, does Brazilian Jiu-Jitsu), his Dad, his brother Noam and sister Jade. Dad speaks French. ' +
+      'Talk like a calm, witty, helpful butler. Keep answers short (1 to 3 sentences) unless asked for more. Answer in the language you are spoken to (English or French). ' +
+      'Use the live info below for time, date, weather, prayer times, room mode, PC state, alarms and timers; never invent them. ' +
+      'Use your tools to do things (room modes, PC, alarms, timers, messages to the kitchen) and say briefly what you did. Messages to the kitchen come from Adam. ' +
+      'If you did not understand, ask one short question.\n\nLIVE INFO:\n' + JSON.stringify(aiCtx());
+  }
+  var icChan = null;
+  function sendKitchen(text) {
+    if (!sbClient || !text) return false;
+    if (!icChan) { icChan = sbClient.channel('home-intercom', { config: { broadcast: { self: false } } }); icChan.subscribe(); }
+    var id = Math.random().toString(36).slice(2, 10);
+    setTimeout(function () { icChan.send({ type: 'broadcast', event: 'text', payload: { id: id, from: 'jarvis-' + id, fromRoom: 'adam', toRoom: 'downstairs', text: text, replyTo: null } }); }, icChan.state === 'joined' ? 0 : 1500);
+    return true;
+  }
+  function aiDo(a) {
+    var g = a.args || {};
+    if (a.name === 'set_mode') {
+      if (g.mode === 'none') setMode('none', true);
+      else if (MODE_PC[g.mode]) { modeAt = Date.now(); setMode(g.mode, true); pcSend(MODE_PC[g.mode]); }
+      else return 'unknown mode';
+    } else if (a.name === 'pc_action') { if (PC_MSG[g.action]) pcSend(g.action); else return 'unknown action'; }
+    else if (a.name === 'set_alarm') {
+      var m = /^(\d{1,2}):(\d{2})/.exec(String(g.time || ''));
+      if (!m) return 'bad time';
+      alarms.push({ id: Date.now(), t: pad(+m[1]) + ':' + m[2], label: String(g.label || ''), on: true }); saveAlarms(); renderAlarms();
+    } else if (a.name === 'delete_alarms') { alarms = []; saveAlarms(); renderAlarms(); }
+    else if (a.name === 'set_timer') {
+      var mn = parseFloat(g.minutes); if (!(mn > 0)) return 'bad minutes';
+      timers.push({ id: Date.now(), end: Date.now() + mn * 60000, label: String(g.label || (mn + ' min')) }); saveTimers(); renderTimers();
+    } else if (a.name === 'cancel_timers') { timers = []; saveTimers(); renderTimers(); }
+    else if (a.name === 'send_kitchen_message') { if (!sendKitchen(String(g.text || ''))) return 'not connected'; }
+    else return 'unknown tool';
+    return 'done';
+  }
+  function b64(buf) { var u = new Uint8Array(buf), s = '', i; for (i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); }
+
+  var live = null;
+  function liveStop(keepUi) {
+    var L = live; live = null; if (!L) return;
+    L.closed = true;
+    try { if (L.ws) L.ws.close(); } catch (e) {}
+    try { if (L.proc) { L.proc.disconnect(); L.src.disconnect(); } } catch (e) {}
+    if (L.stream) L.stream.getTracks().forEach(function (t) { t.stop(); });
+    L.sources.forEach(function (s) { try { s.stop(); } catch (e) {} });
+    clearInterval(L.tick);
+    try { L.ctx.close(); } catch (e) {}
+    if (!keepUi) $('aiSheet').classList.add('hidden');
+  }
+  function stopPlayback(L) { L.sources.forEach(function (s) { try { s.stop(); } catch (e) {} }); L.sources = []; L.playT = 0; }
+  function playPcm(L, data) {
+    var bin = atob(data), n = bin.length >> 1, buf = L.ctx.createBuffer(1, n, 24000), ch = buf.getChannelData(0);
+    for (var i = 0; i < n; i++) { var v = bin.charCodeAt(2 * i) | (bin.charCodeAt(2 * i + 1) << 8); if (v >= 32768) v -= 65536; ch[i] = v / 32768; }
+    var s = L.ctx.createBufferSource(); s.buffer = buf; s.connect(L.ctx.destination);
+    var t = Math.max(L.ctx.currentTime + 0.04, L.playT); s.start(t); L.playT = t + buf.duration;
+    L.sources.push(s); s.onended = function () { var k = L.sources.indexOf(s); if (k >= 0) L.sources.splice(k, 1); };
+  }
+  function micStart(L) {
+    var src = L.ctx.createMediaStreamSource(L.stream), proc = L.ctx.createScriptProcessor(4096, 1, 1), ratio = L.ctx.sampleRate / 16000;
+    proc.onaudioprocess = function (e) {
+      if (!L.ready || !L.ws || L.ws.readyState !== 1) return;
+      if (L.ctx.currentTime < L.playT + 0.3) return;            // Jarvis is talking: don't hear himself
+      var inp = e.inputBuffer.getChannelData(0), n = Math.floor(inp.length / ratio), out = new Int16Array(n), lvl = 0;
+      for (var i = 0; i < n; i++) {
+        var a = Math.floor(i * ratio), b = Math.min(inp.length, Math.floor((i + 1) * ratio)), sum = 0;
+        for (var k = a; k < b; k++) sum += inp[k];
+        var v = sum / Math.max(1, b - a); v = v < -1 ? -1 : v > 1 ? 1 : v; out[i] = v < 0 ? v * 0x8000 : v * 0x7fff; lvl += v * v;
+      }
+      if (Math.sqrt(lvl / n) > 0.02) L.lastAct = Date.now();
+      L.ws.send(JSON.stringify({ realtimeInput: { audio: { data: b64(out.buffer), mimeType: 'audio/pcm;rate=16000' } } }));
+    };
+    src.connect(proc); proc.connect(L.ctx.destination); L.src = src; L.proc = proc;
+  }
+  function liveMsg(L, m) {
+    if (m.setupComplete) {
+      L.ready = true; micStart(L); aiState('listening', 'Listening…');
+      return;
+    }
+    var sc = m.serverContent;
+    if (sc) {
+      if (sc.interrupted) stopPlayback(L);
+      if (sc.inputTranscription && sc.inputTranscription.text) { caption('me', sc.inputTranscription.text); L.lastAct = Date.now(); }
+      if (sc.outputTranscription && sc.outputTranscription.text) caption('ai', sc.outputTranscription.text);
+      if (sc.modelTurn && sc.modelTurn.parts) sc.modelTurn.parts.forEach(function (p) {
+        if (p.inlineData && p.inlineData.data && /audio/.test(p.inlineData.mimeType || 'audio')) { playPcm(L, p.inlineData.data); L.lastAct = Date.now(); }
+      });
+      if (sc.turnComplete) { capMe = null; capAi = null; }
+    }
+    if (m.toolCall && m.toolCall.functionCalls) {
+      var res = m.toolCall.functionCalls.map(function (fc) {
+        var r; try { r = aiDo({ name: fc.name, args: fc.args || {} }); } catch (e) { r = 'error'; }
+        return { id: fc.id, name: fc.name, response: { result: r } };
+      });
+      L.ws.send(JSON.stringify({ toolResponse: { functionResponses: res } }));
+    }
+  }
+  function liveStart() {
+    if (live) return;
+    $('aiLog').innerHTML = ''; capMe = capAi = null;
+    $('aiSheet').classList.remove('hidden'); aiState('thinking', 'Connecting…');
+    var AC = window.AudioContext || window.webkitAudioContext, L = { ctx: new AC(), sources: [], playT: 0, closed: false, lastAct: Date.now() };
+    live = L; L.ctx.resume();
+    L.tick = setInterval(function () {
+      if (!L.ready) return;
+      var talking = L.ctx.currentTime < L.playT;
+      if (talking && $('aiOrb').className.indexOf('speaking') < 0) aiState('speaking', '');
+      else if (!talking && $('aiOrb').className.indexOf('listening') < 0) aiState('listening', 'Listening…');
+      if (Date.now() - L.lastAct > 90000) { liveStop(true); aiState('', 'Went quiet, so I hung up. Tap the orb to talk again.'); }
+    }, 250);
+    navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } })
+      .then(function (stream) {
+        if (L.closed) { stream.getTracks().forEach(function (t) { t.stop(); }); return; }
+        L.stream = stream;
+        return fetch(AI_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + SB_KEY, apikey: SB_KEY }, body: JSON.stringify({ live: true }) })
+          .then(function (r) { return r.json(); })
+          .then(function (j) {
+            if (L.closed) return;
+            if (!j.token) throw new Error(j.reply || 'no token');
+            var ws = new WebSocket(WS_URL + encodeURIComponent(j.token)); ws.binaryType = 'arraybuffer'; L.ws = ws;
+            ws.onopen = function () {
+              ws.send(JSON.stringify({ setup: {
+                model: 'models/' + j.model,
+                generationConfig: { responseModalities: ['AUDIO'], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: VOICE } } } },
+                systemInstruction: { parts: [{ text: sysPrompt() }] },
+                tools: LIVE_TOOLS, inputAudioTranscription: {}, outputAudioTranscription: {}
+              } }));
+            };
+            ws.onmessage = function (ev) {
+              var txt = typeof ev.data === 'string' ? ev.data : new TextDecoder().decode(ev.data), m;
+              try { m = JSON.parse(txt); } catch (e) { return; }
+              liveMsg(L, m);
+            };
+            ws.onclose = function (ev) {
+              if (L.closed) return;
+              liveStop(true);
+              aiState('', ev.code === 1000 ? 'Call ended. Tap the orb to talk again.' : 'Disconnected (' + ev.code + (ev.reason ? ': ' + ev.reason : '') + ')');
+            };
+          });
+      })
+      .catch(function (e) {
+        if (L.closed) return;
+        liveStop(true);
+        aiState('', e && e.name === 'NotAllowedError' ? 'Microphone blocked: allow it for this page and try again' : 'Could not start: ' + (e && e.message ? e.message : e));
+      });
+  }
+  $('tAi').onclick = function () { liveStart(); };
+  $('aiOrb').onclick = function () { if (!live) { liveStart(); return; } if (live.ctx.currentTime < live.playT) { stopPlayback(live); live.lastAct = Date.now(); } };
+  $('aiEnd').onclick = $('aiClose').onclick = function () { liveStop(false); };
+  loadPrayers(); setInterval(loadPrayers, 3600000);
+
   // ---------- start ----------
   renderWeather(store('room-weather')); loadWeather();
   renderAlarms(); renderTimers();
@@ -364,7 +585,7 @@
 <script>
 /* auto-update: every 5 min, look for a newer version of this page and reload (home-screen apps keep old copies otherwise) */
 (function () {
-  var PAGE_VER = '2026-11-22c';
+  var PAGE_VER = '2026-11-22f';
   function busy() { var a = document.getElementsByTagName('audio'); for (var i = 0; i < a.length; i++) if (!a[i].paused) return true; return false; }
   function check() {
     var x = new XMLHttpRequest();
