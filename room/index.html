@@ -59,7 +59,7 @@
  <button class="big" style="background:#16a34a" data-pc="cod">Call of Duty<small>Launch the game</small></button>
  <button class="big" style="background:#9333ea" data-pc="chrome">Chrome<small>Opens on the 2nd monitor</small></button>
  <button class="big" style="background:#334155" data-pc="sleep">Sleep PC<small>Puts the PC to sleep</small></button>
- <button class="big" style="background:#7f1d1d" data-pc="dad">Dad: Mortal Shell<small>Dad clicks his name, then Mortal Shell starts by itself</small></button>
+ <button class="big" style="background:#7f1d1d" data-pc="dad">Dad: Mortal Shell<small>Switches to Dad's account and starts Mortal Shell</small></button>
  <button class="btn ghost close" data-close>Close</button>
 </div></div>
 
@@ -153,12 +153,14 @@
   setInterval(function () { if (pcOnline && pcChan) pcChan.send({ type: 'broadcast', event: 'pc', payload: { a: 'status' } }); pcPill(); }, 20000);
   var PC_MSG = { ready: 'Getting your PC ready…', cod: 'Launching Call of Duty…', chrome: 'Opening Chrome…', sleep: 'Putting the PC to sleep…', study: 'Opening Chrome…' };
   // keys the ESP32 presses to switch to Dad's account and start Mortal Shell (tuned on the real PC)
-  var DAD_SEQ = 'wake,w2000,winl,w20000,hotf6,w10000,hotf6,w10000,hotf6,w10000,hotf6,w10000,hotf6,w10000,hotf6,w10000,hotf6,w10000,hotf6,w10000,hotf6,w10000,hotf6,w10000,hotf6,w10000,hotf6,w10000,hotf6,w10000,hotf6,w10000,hotf6,w10000';
-  PC_MSG.dad = "PC is going to the sign-in screen — Dad: click your name";
+  var ADAM_SEQ = 'wake,w1000,winl,w2500,space,w1500,enter,w8000,hotf9,w8000,space,w1500,enter,w20000,hotf9';
+  var DAD_SEQ = 'wake,w1000,winl,w2500,space,w1500,enter,w8000,hotf6,w8000,space,w2000,enter,w25000,hotf6,w15000,hotf6';
+  PC_MSG.dad = "Switching to Dad's account, then Mortal Shell…";
   function pcSend(a) {
     if (!pcChan || !pcOnline) { toast("Can't reach the PC helper"); return; }
     var id = Math.random().toString(36).slice(2, 8);
-    var payload = a === 'dad' ? { a: 'seq', s: DAD_SEQ, id: id } : { a: a, id: id };
+    var seqs = { dad: DAD_SEQ, ready: ADAM_SEQ };
+    var payload = seqs[a] ? { a: 'seq', s: seqs[a], id: id } : { a: a, id: id };
     pcChan.send({ type: 'broadcast', event: 'pc', payload: payload });
     toast(PC_MSG[a] || 'Sent');
     waiting[id] = setTimeout(function () { delete waiting[id]; toast("The PC helper didn't answer"); }, 6000);
