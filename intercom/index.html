@@ -475,7 +475,10 @@
   };
   $("msgInput").addEventListener("keydown", function (e) { if (e.key === "Enter" || e.keyCode === 13) { e.preventDefault(); $("sendBtn").onclick(); } });
 
+  var lastSent = { t: '', at: 0 };
   function sendText(text, toRoom, replyTo) {
+    if (text === lastSent.t && Date.now() - lastSent.at < 2000) return;      // double tap on Send
+    lastSent = { t: text, at: Date.now() };
     if (!channel) { setSendStatus("Not connected yet — try again in a moment.", true); return; }
     var id = uid();
     send("text", { id: id, from: myId, fromRoom: myRoom, toRoom: toRoom, text: text, replyTo: replyTo || null });
@@ -490,8 +493,10 @@
   }
   var pendingTexts = {};
 
+  var seenTexts = {};
   function onText(p) {
     if (!p || p.from === myId || p.fromRoom === myRoom) return;
+    if (p.id) { if (seenTexts[p.id]) return; seenTexts[p.id] = Date.now(); }   // same message twice (e.g. after a reconnect): show it once
     if (p.toRoom !== "all" && p.toRoom !== myRoom) return;
     send("ack", { toId: p.from, fromRoom: myRoom, kind: "text", msgId: p.id });
     showCard(p);
@@ -583,11 +588,12 @@
   var reconnectTimer = null;
   function connectChannel() {
     setNet("wait", "Connecting…");
-    channel = sb.channel(CHANNEL_NAME, { config: { broadcast: { self: false }, presence: { key: myId } } });
+    var mine = sb.channel(CHANNEL_NAME, { config: { broadcast: { self: false }, presence: { key: myId } } });
+    channel = mine;
     channel.on("presence", { event: "sync" }, onSync);
     channel.on("broadcast", { event: "signal" }, function (m) { onSignal(m.payload); });
     channel.on("broadcast", { event: "talk" }, function (m) { onTalk(m.payload); });
-    channel.on("broadcast", { event: "text" }, function (m) { onText(m.payload); });
+    channel.on("broadcast", { event: "text" }, function (m) { if (channel === mine) onText(m.payload); });
     channel.on("broadcast", { event: "ack" }, function (m) { onAck(m.payload); });
     channel.subscribe(function (status) {
       if (status === "SUBSCRIBED") {
@@ -606,8 +612,9 @@
       reconnectTimer = null;
       if (talking) stopTalk();
       Object.keys(peers).forEach(closePeer);
-      try { sb.removeChannel(channel); } catch (e) {}
-      channel = null;
+      var old = channel; channel = null;
+      try { old.unsubscribe(); } catch (e) {}
+      try { sb.removeChannel(old); } catch (e) {}
       connectChannel();
     }, 3000);
   }
