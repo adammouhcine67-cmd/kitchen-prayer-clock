@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="My Room">
 <meta name="theme-color" content="#04060b">
 <title>My Room</title>
-<link rel="stylesheet" href="room.css?v=2026-11-23a">
+<link rel="stylesheet" href="room.css?v=2026-11-23b">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.js"></script>
 </head>
 <body data-mode="none">
@@ -464,6 +464,9 @@
     while (log.childNodes.length > 6) log.removeChild(log.firstChild);
     log.scrollTop = log.scrollHeight;
   }
+  // Adam's weekly activities (Jarvis mentions them in the briefing)
+  var MY_WEEK = [{ day: 3, time: '17:15', what: 'Brazilian Jiu-Jitsu (BJJ)' }, { day: 6, time: '12:00', what: 'Brazilian Jiu-Jitsu (BJJ)' }];
+  var DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   function aiCtx() {
     var w = store('room-weather'), wtxt = null;
     if (w && w.current) {
@@ -476,6 +479,9 @@
       roomMode: S.mode, pc: (Date.now() - pcSeen < 45000) ? (pcAwake ? 'on' : 'asleep') : 'unknown',
       alarms: alarms.map(function (a) { return a.t + (a.label ? ' ' + a.label : '') + (a.on ? '' : ' (off)') + (a.brief ? ' [briefing' + (a.note ? ', note: ' + a.note : '') + ']' : ''); }),
       notesForNextBriefing: briefNotes,
+      adamWeeklyActivities: MY_WEEK.map(function (a) { return DAYS[a.day] + ' ' + a.time + ' ' + a.what; }),
+      adamActivitiesToday: MY_WEEK.filter(function (a) { return a.day === new Date().getDay(); }).map(function (a) { return a.time + ' ' + a.what; }),
+      adamActivitiesTomorrow: MY_WEEK.filter(function (a) { return a.day === (new Date().getDay() + 1) % 7; }).map(function (a) { return a.time + ' ' + a.what; }),
       timers: timers.map(function (t) { return t.label + ': ' + Math.ceil((t.end - Date.now()) / 60000) + ' min left'; })
     };
   }
@@ -599,8 +605,9 @@
         notes = notes.concat(briefNotes); briefNotes = []; saveBriefNotes(); renderBriefNotes();
         L.ws.send(JSON.stringify({ clientContent: { turns: [{ role: 'user', parts: [{ text:
           '(Adam just pressed Stop on his ' + (L.alarm ? L.alarm.t : '') + ' alarm. Give him his MORNING BRIEFING in English, warm and upbeat, about 20 to 30 seconds: ' +
-          'say good morning and the time; today\'s weather (temperature, rain chance, what to wear if useful); the prayer times still to come today and the next one; ' +
-          'any timers or other alarms today; ' + (notes.length ? 'then read these notes for him: ' + notes.map(function (n, i) { return (i + 1) + ') ' + n; }).join(' ') + ' ; ' : '') +
+          'say good morning, the time and today\'s date; today\'s weather (temperature, rain chance, what to wear if useful); ' +
+          'his activities today (adamActivitiesToday, e.g. BJJ, with the time) or, if none, mention tomorrow\'s if there are any; any timers or other alarms today; ' +
+          'do NOT mention prayer times in the briefing; ' + (notes.length ? 'then read these notes for him: ' + notes.map(function (n, i) { return (i + 1) + ') ' + n; }).join(' ') + ' ; ' : '') +
           'end by asking if he needs anything. Use only the LIVE INFO, do not invent anything.)' }] }], turnComplete: true } }));
       }
       if (L.wake) L.ws.send(JSON.stringify({ clientContent: { turns: [{ role: 'user', parts: [{ text: '(Adam just said "Hey Jarvis" to wake you up. Answer with a very short greeting, like "Yes?" or "At your service." in English, then wait for his request.)' }] }], turnComplete: true } }));
@@ -790,7 +797,7 @@
 <script>
 /* auto-update: every 5 min, look for a newer version of this page and reload (home-screen apps keep old copies otherwise) */
 (function () {
-  var PAGE_VER = '2026-11-23a';
+  var PAGE_VER = '2026-11-23b';
   function busy() { var a = document.getElementsByTagName('audio'); for (var i = 0; i < a.length; i++) if (!a[i].paused) return true; return false; }
   function check() {
     var x = new XMLHttpRequest();
