@@ -203,3 +203,7 @@ input[type=time],input[type=number],input[type=text]{background:#0b1426;border:1
 .notes{margin-top:14px}.notes .label{margin:0 0 6px 2px}
 .note{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-top:1px solid var(--line);font-size:17px}
 .seg{gap:8px}.seg .btn{flex:1}
+.sugg{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.sg{text-align:left;border:1px solid rgba(94,176,255,.35);background:rgba(94,176,255,.1);border-radius:14px;padding:12px 14px;font-size:17px;cursor:pointer}
+.sg.own{border-color:rgba(255,255,255,.15);background:rgba(255,255,255,.06)}
+.sg.none{border-color:transparent;background:none;color:var(--muted);padding:6px 14px}

@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="My Room">
 <meta name="theme-color" content="#04060b">
 <title>My Room</title>
-<link rel="stylesheet" href="room.css?v=2026-11-23c">
+<link rel="stylesheet" href="room.css?v=2026-11-23d">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.js"></script>
 </head>
 <body data-mode="none">
@@ -73,7 +73,8 @@
  <div class="label" style="margin:14px 0 6px">☀️ Jarvis briefing when I press Stop</div>
  <div class="row seg" id="briefPick"><button class="btn ghost sel" data-b="full">Full</button><button class="btn ghost" data-b="basic">Basic</button><button class="btn ghost" data-b="off">Off</button></div>
  <p class="hint" id="briefHint">Full: time, date, weather, your BJJ days, alarms and your notes.</p>
- <input type="text" id="alarmNote" placeholder="Note for Jarvis to say every time (optional), e.g. pack the gym bag" style="width:100%;margin-top:8px">
+ <input type="text" id="alarmNote" readonly placeholder="Tap to add a note for Jarvis to say (optional)" style="width:100%;margin-top:8px">
+ <div class="sugg hidden" id="noteSugg"><button class="sg" id="sgDraft"></button><button class="sg own" id="sgOwn">✏️ Type your own</button><button class="sg none" id="sgNone">No note</button></div>
  <ul class="list" id="alarmList"></ul>
  <div class="notes" id="briefNotes"></div>
  <p class="hint">Alarms ring every day while this page is open: keep the iPad plugged in, Auto-Lock off, volume up. Tip: say "Hey Jarvis, add a note to my briefing…" to add one-time notes.</p>
@@ -318,9 +319,18 @@
       briefPick = b.getAttribute('data-b');
       Array.prototype.forEach.call(document.querySelectorAll('#briefPick button'), function (x) { x.classList.toggle('sel', x === b); });
       $('briefHint').textContent = BRIEF_HINT[briefPick];
-      if (briefPick === 'basic' && !$('alarmNote').value.trim()) $('alarmNote').value = BASIC_NOTE;
+      var off = briefPick === 'off';
+      $('alarmNote').classList.toggle('hidden', off); if (off) { $('alarmNote').value = ''; $('noteSugg').classList.add('hidden'); }
     };
   });
+  // note bar: tap it for suggestions (your drafted note, or type your own)
+  $('sgDraft').textContent = '“' + BASIC_NOTE + '”';
+  function noteReadonly(on) { if (on) $('alarmNote').setAttribute('readonly', ''); else $('alarmNote').removeAttribute('readonly'); }
+  $('alarmNote').onclick = function () { if ($('alarmNote').hasAttribute('readonly')) $('noteSugg').classList.remove('hidden'); };
+  $('sgDraft').onclick = function () { $('alarmNote').value = BASIC_NOTE; $('noteSugg').classList.add('hidden'); };
+  $('sgNone').onclick = function () { $('alarmNote').value = ''; $('noteSugg').classList.add('hidden'); };
+  $('sgOwn').onclick = function () { $('noteSugg').classList.add('hidden'); noteReadonly(false); $('alarmNote').value = ''; $('alarmNote').placeholder = 'Type your note…'; $('alarmNote').focus(); };
+  $('alarmNote').onblur = function () { noteReadonly(true); $('alarmNote').placeholder = 'Tap to add a note for Jarvis to say (optional)'; };
   // one-time notes for the next briefing (added by voice)
   var briefNotes = store('room-brief-notes') || [];
   function saveBriefNotes() { store('room-brief-notes', briefNotes); }
@@ -336,7 +346,7 @@
   }
   $('addAlarm').onclick = function () {
     var t = $('alarmTime').value; if (!t) return;
-    alarms.push({ id: Date.now(), t: t, label: $('alarmLabel').value.trim(), on: true, brief: briefPick !== 'off', style: briefPick, note: $('alarmNote').value.trim() }); $('alarmLabel').value = ''; $('alarmNote').value = '';
+    alarms.push({ id: Date.now(), t: t, label: $('alarmLabel').value.trim(), on: true, brief: briefPick !== 'off', style: briefPick, note: briefPick === 'off' ? '' : $('alarmNote').value.trim() }); $('alarmLabel').value = ''; $('alarmNote').value = ''; $('noteSugg').classList.add('hidden');
     saveAlarms(); renderAlarms(); toast('Alarm set for ' + t);
   };
 
@@ -816,7 +826,7 @@
 <script>
 /* auto-update: every 5 min, look for a newer version of this page and reload (home-screen apps keep old copies otherwise) */
 (function () {
-  var PAGE_VER = '2026-11-23c';
+  var PAGE_VER = '2026-11-23d';
   function busy() { var a = document.getElementsByTagName('audio'); for (var i = 0; i < a.length; i++) if (!a[i].paused) return true; return false; }
   function check() {
     var x = new XMLHttpRequest();
