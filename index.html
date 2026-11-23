@@ -384,6 +384,25 @@ body[data-p="isha"]{--kacc:#8b92ff;--kacc2:#2563eb}
  .clock{font-size:130px}
  .up-in{display:none}
 }
+
+/* ===== v5: same few colours as the room iPad: glass + one blue/purple accent ===== */
+body[data-p],body{--kacc:#5eb0ff;--kacc2:#7c5cff}
+.kg1{background:radial-gradient(closest-side,#5eb0ff,rgba(94,176,255,0))!important;opacity:.38}
+.kg2{background:radial-gradient(closest-side,#7c5cff,rgba(124,92,255,0))!important;opacity:.38}
+/* activities: all the same calm glass, a light background to stand out; only the next one lights up */
+.up{border:1px solid rgba(255,255,255,.12)!important;background:rgba(255,255,255,.06)!important;background:linear-gradient(160deg,rgba(255,255,255,.1),rgba(255,255,255,.04) 70%)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.1)!important}
+.up.first{border-color:#5eb0ff!important;background:linear-gradient(160deg,rgba(255,255,255,.1),rgba(255,255,255,.02) 70%),radial-gradient(circle at 10% 0%,rgba(94,176,255,.55),rgba(94,176,255,0) 75%)!important;
+ box-shadow:0 0 0 1px #5eb0ff,0 0 32px -8px #5eb0ff,inset 0 1px 0 rgba(255,255,255,.2)!important}
+.up-day{color:#c9d3e3}.up.first .up-day{color:#fff}
+.up-who{color:var(--muted)}.up.first .up-who{color:rgba(255,255,255,.85)}
+.up-in{background:rgba(94,176,255,.2)!important;color:#fff!important}
+/* prayers: glass, the next one lit in the accent (already), the rest calm */
+.p{border-color:rgba(255,255,255,.1)}
+.p.past{opacity:.4}
+/* buttons: like the room's tool tiles (no green/blue fills) */
+.kbtn.msg,.kbtn.pc{border-color:rgba(255,255,255,.09)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 20px 40px rgba(0,0,0,.35)!important}
+.kbtn.msg .ki,.kbtn.pc .ki{background:rgba(255,255,255,.05)!important;border:1px solid rgba(255,255,255,.1)!important;box-shadow:none!important;color:#c9d3e3!important}
+.kbtn.msg .ki{color:#5eb0ff!important}.kbtn.pc .ki{color:#5eb0ff!important}
 </style>
 </head>
 <body>
@@ -1426,7 +1445,7 @@ setInterval(loadWeather, 15 * 60 * 1000);
 <script>
 /* auto-update: every 5 min, look for a newer version of this page and reload (home-screen apps keep old copies otherwise) */
 (function () {
-  var PAGE_VER = '2026-11-23e';
+  var PAGE_VER = '2026-11-23f';
   function busy() { var a = document.getElementsByTagName('audio'); for (var i = 0; i < a.length; i++) if (!a[i].paused) return true; return false; }
   function check() {
     var x = new XMLHttpRequest();
