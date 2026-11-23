@@ -202,3 +202,4 @@ input[type=time],input[type=number],input[type=text]{background:#0b1426;border:1
 .chk input{width:22px;height:22px}
 .notes{margin-top:14px}.notes .label{margin:0 0 6px 2px}
 .note{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-top:1px solid var(--line);font-size:17px}
+.seg{gap:8px}.seg .btn{flex:1}

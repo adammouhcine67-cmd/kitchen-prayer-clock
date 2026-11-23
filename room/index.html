@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="My Room">
 <meta name="theme-color" content="#04060b">
 <title>My Room</title>
-<link rel="stylesheet" href="room.css?v=2026-11-23b">
+<link rel="stylesheet" href="room.css?v=2026-11-23c">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.js"></script>
 </head>
 <body data-mode="none">
@@ -70,7 +70,9 @@
 <div class="modal hidden" id="alarmSheet"><div class="sheet">
  <h2>⏰ Alarms</h2>
  <div class="row"><input type="time" id="alarmTime" value="06:40"><input type="text" id="alarmLabel" placeholder="Label (optional)" style="flex:1"><button class="btn" id="addAlarm">Add</button></div>
- <label class="chk"><input type="checkbox" id="alarmBrief" checked> ☀️ Jarvis morning briefing when I press Stop</label>
+ <div class="label" style="margin:14px 0 6px">☀️ Jarvis briefing when I press Stop</div>
+ <div class="row seg" id="briefPick"><button class="btn ghost sel" data-b="full">Full</button><button class="btn ghost" data-b="basic">Basic</button><button class="btn ghost" data-b="off">Off</button></div>
+ <p class="hint" id="briefHint">Full: time, date, weather, your BJJ days, alarms and your notes.</p>
  <input type="text" id="alarmNote" placeholder="Note for Jarvis to say every time (optional), e.g. pack the gym bag" style="width:100%;margin-top:8px">
  <ul class="list" id="alarmList"></ul>
  <div class="notes" id="briefNotes"></div>
@@ -301,13 +303,24 @@
       var li = document.createElement('li'); if (!a.on) li.className = 'off';
       var hm = a.t.split(':'), d = new Date(); d.setHours(+hm[0], +hm[1]);
       li.innerHTML = '<span class="tm"></span><span class="lb"></span><button class="switch' + (a.on ? ' on' : '') + '"></button><button class="del">✕</button>';
-      li.querySelector('.tm').textContent = fmt(d, false); li.querySelector('.lb').textContent = (a.brief ? '☀️ ' : '') + (a.label || '') + (a.note ? ' · “' + a.note + '”' : '');
+      li.querySelector('.tm').textContent = fmt(d, false); li.querySelector('.lb').textContent = (a.brief ? (a.style === 'basic' ? '☀️ Basic · ' : '☀️ ') : '') + (a.label || '') + (a.note ? ' · “' + a.note + '”' : '');
       li.querySelector('.switch').onclick = function () { a.on = !a.on; saveAlarms(); renderAlarms(); };
       li.querySelector('.del').onclick = function () { alarms = alarms.filter(function (x) { return x !== a; }); saveAlarms(); renderAlarms(); };
       ul.appendChild(li);
     });
     renderChips(); renderBriefNotes();
   }
+  // briefing choice for new alarms: Full / Basic / Off
+  var BASIC_NOTE = "Bring a can to school. Don't forget your perfume.", briefPick = 'full';
+  var BRIEF_HINT = { full: 'Full: time, date, weather, your BJJ days, alarms and your notes.', basic: 'Basic: just the time, the date and your notes. Short and quick.', off: 'No briefing: Stop just stops the alarm.' };
+  Array.prototype.forEach.call(document.querySelectorAll('#briefPick button'), function (b) {
+    b.onclick = function () {
+      briefPick = b.getAttribute('data-b');
+      Array.prototype.forEach.call(document.querySelectorAll('#briefPick button'), function (x) { x.classList.toggle('sel', x === b); });
+      $('briefHint').textContent = BRIEF_HINT[briefPick];
+      if (briefPick === 'basic' && !$('alarmNote').value.trim()) $('alarmNote').value = BASIC_NOTE;
+    };
+  });
   // one-time notes for the next briefing (added by voice)
   var briefNotes = store('room-brief-notes') || [];
   function saveBriefNotes() { store('room-brief-notes', briefNotes); }
@@ -323,7 +336,7 @@
   }
   $('addAlarm').onclick = function () {
     var t = $('alarmTime').value; if (!t) return;
-    alarms.push({ id: Date.now(), t: t, label: $('alarmLabel').value.trim(), on: true, brief: $('alarmBrief').checked, note: $('alarmNote').value.trim() }); $('alarmLabel').value = ''; $('alarmNote').value = '';
+    alarms.push({ id: Date.now(), t: t, label: $('alarmLabel').value.trim(), on: true, brief: briefPick !== 'off', style: briefPick, note: $('alarmNote').value.trim() }); $('alarmLabel').value = ''; $('alarmNote').value = '';
     saveAlarms(); renderAlarms(); toast('Alarm set for ' + t);
   };
 
@@ -442,12 +455,12 @@
       parameters: { type: 'OBJECT', properties: { mode: { type: 'STRING', enum: ['gaming', 'study', 'sleep', 'adam', 'dad', 'none'] } }, required: ['mode'] } },
     { name: 'pc_action', description: 'One PC action: ready (wake + sign in Adam), cod (Call of Duty), chrome, sleep, dad (switch to Dad and start Mortal Shell), study.',
       parameters: { type: 'OBJECT', properties: { action: { type: 'STRING', enum: ['ready', 'cod', 'chrome', 'sleep', 'dad', 'study'] } }, required: ['action'] } },
-    { name: 'set_alarm', description: 'Set a daily alarm on this iPad (with a morning briefing when Adam presses Stop, unless briefing is false).', parameters: { type: 'OBJECT', properties: { time: { type: 'STRING', description: '24-hour HH:MM' }, label: { type: 'STRING' }, briefing: { type: 'BOOLEAN' }, note: { type: 'STRING', description: 'note read in every briefing for this alarm' } }, required: ['time'] } },
+    { name: 'set_alarm', description: 'Set a daily alarm on this iPad (with a morning briefing when Adam presses Stop, unless briefing is false).', parameters: { type: 'OBJECT', properties: { time: { type: 'STRING', description: '24-hour HH:MM' }, label: { type: 'STRING' }, briefing: { type: 'STRING', enum: ['full', 'basic', 'off'], description: 'full (default), basic = time, date and notes only, or off' }, note: { type: 'STRING', description: 'note read in every briefing for this alarm' } }, required: ['time'] } },
     { name: 'delete_alarms', description: 'Delete all alarms.', parameters: { type: 'OBJECT', properties: {} } },
     { name: 'set_timer', description: 'Start a countdown timer.', parameters: { type: 'OBJECT', properties: { minutes: { type: 'NUMBER' }, label: { type: 'STRING' } }, required: ['minutes'] } },
     { name: 'cancel_timers', description: 'Stop all timers.', parameters: { type: 'OBJECT', properties: {} } },
     { name: 'add_briefing_note', description: 'Save a one-time note that Jarvis will read in Adam\'s next morning briefing (after his alarm).', parameters: { type: 'OBJECT', properties: { text: { type: 'STRING' } }, required: ['text'] } },
-    { name: 'set_alarm_briefing', description: 'Turn the morning briefing on or off for an alarm, and optionally set the note read every time.', parameters: { type: 'OBJECT', properties: { time: { type: 'STRING', description: 'HH:MM of the alarm' }, briefing: { type: 'BOOLEAN' }, note: { type: 'STRING' } }, required: ['time'] } },
+    { name: 'set_alarm_briefing', description: 'Turn the morning briefing on or off for an alarm, and optionally set the note read every time.', parameters: { type: 'OBJECT', properties: { time: { type: 'STRING', description: 'HH:MM of the alarm' }, briefing: { type: 'STRING', enum: ['full', 'basic', 'off'] }, note: { type: 'STRING' } }, required: ['time'] } },
     { name: 'send_kitchen_message', description: 'Send a short text message to the kitchen iPad (Dad reads it, it is read out loud).', parameters: { type: 'OBJECT', properties: { text: { type: 'STRING' } }, required: ['text'] } }
   ] }];
   function aiState(st, msg) {
@@ -477,7 +490,7 @@
     return {
       now: new Date().toString(), city: S.city || 'not set', weather: wtxt, prayersToday: prayersToday,
       roomMode: S.mode, pc: (Date.now() - pcSeen < 45000) ? (pcAwake ? 'on' : 'asleep') : 'unknown',
-      alarms: alarms.map(function (a) { return a.t + (a.label ? ' ' + a.label : '') + (a.on ? '' : ' (off)') + (a.brief ? ' [briefing' + (a.note ? ', note: ' + a.note : '') + ']' : ''); }),
+      alarms: alarms.map(function (a) { return a.t + (a.label ? ' ' + a.label : '') + (a.on ? '' : ' (off)') + (a.brief ? ' [' + (a.style || 'full') + ' briefing' + (a.note ? ', note: ' + a.note : '') + ']' : ''); }),
       notesForNextBriefing: briefNotes,
       adamWeeklyActivities: MY_WEEK.map(function (a) { return DAYS[a.day] + ' ' + a.time + ' ' + a.what; }),
       adamActivitiesToday: MY_WEEK.filter(function (a) { return a.day === new Date().getDay(); }).map(function (a) { return a.time + ' ' + a.what; }),
@@ -511,7 +524,8 @@
     else if (a.name === 'set_alarm') {
       var m = /^(\d{1,2}):(\d{2})/.exec(String(g.time || ''));
       if (!m) return 'bad time';
-      alarms.push({ id: Date.now(), t: pad(+m[1]) + ':' + m[2], label: String(g.label || ''), on: true, brief: g.briefing !== false, note: String(g.note || '') }); saveAlarms(); renderAlarms();
+      var st = g.briefing === 'basic' || g.briefing === 'off' ? g.briefing : (g.briefing === false ? 'off' : 'full');
+      alarms.push({ id: Date.now(), t: pad(+m[1]) + ':' + m[2], label: String(g.label || ''), on: true, brief: st !== 'off', style: st, note: String(g.note || (st === 'basic' ? BASIC_NOTE : '')) }); saveAlarms(); renderAlarms();
     } else if (a.name === 'delete_alarms') { alarms = []; saveAlarms(); renderAlarms(); }
     else if (a.name === 'set_timer') {
       var mn = parseFloat(g.minutes); if (!(mn > 0)) return 'bad minutes';
@@ -521,7 +535,7 @@
     else if (a.name === 'set_alarm_briefing') {
       var mt = /^(\d{1,2}):(\d{2})/.exec(String(g.time || '')); if (!mt) return 'bad time';
       var tt = pad(+mt[1]) + ':' + mt[2], al = alarms.filter(function (x) { return x.t === tt; })[0]; if (!al) return 'no alarm at ' + tt;
-      if (g.briefing !== undefined) al.brief = !!g.briefing; if (g.note !== undefined) al.note = String(g.note); saveAlarms(); renderAlarms(); return 'updated';
+      if (g.briefing !== undefined) { al.style = g.briefing === true ? 'full' : g.briefing === false ? 'off' : g.briefing; al.brief = al.style !== 'off'; } if (g.note !== undefined) al.note = String(g.note); saveAlarms(); renderAlarms(); return 'updated';
     }
     else if (a.name === 'send_kitchen_message') { if (!sendKitchen(String(g.text || ''))) return 'not connected'; }
     else return 'unknown tool';
@@ -603,12 +617,17 @@
         var notes = [];
         if (L.alarm && L.alarm.note) notes.push(L.alarm.note);
         notes = notes.concat(briefNotes); briefNotes = []; saveBriefNotes(); renderBriefNotes();
-        L.ws.send(JSON.stringify({ clientContent: { turns: [{ role: 'user', parts: [{ text:
-          '(Adam just pressed Stop on his ' + (L.alarm ? L.alarm.t : '') + ' alarm. Give him his MORNING BRIEFING in English, warm and upbeat, about 20 to 30 seconds: ' +
-          'say good morning, the time and today\'s date; today\'s weather (temperature, rain chance, what to wear if useful); ' +
-          'his activities today (adamActivitiesToday, e.g. BJJ, with the time) or, if none, mention tomorrow\'s if there are any; any timers or other alarms today; ' +
-          'do NOT mention prayer times in the briefing; ' + (notes.length ? 'then read these notes for him: ' + notes.map(function (n, i) { return (i + 1) + ') ' + n; }).join(' ') + ' ; ' : '') +
-          'end by asking if he needs anything. Use only the LIVE INFO, do not invent anything.)' }] }], turnComplete: true } }));
+        var noteTxt = notes.length ? notes.map(function (n, i) { return (i + 1) + ') ' + n; }).join(' ') : '';
+        var basic = L.alarm && L.alarm.style === 'basic';
+        var brief = basic
+          ? '(Adam just pressed Stop on his ' + L.alarm.t + ' alarm. Give him a SHORT BASIC BRIEFING in English, about 10 seconds: say good morning, the time and today\'s date' +
+            (noteTxt ? ', then read his notes clearly, word for word: ' + noteTxt : '') + '. Nothing else: no weather, no prayer times, no questions. Then stop talking.)'
+          : '(Adam just pressed Stop on his ' + (L.alarm ? L.alarm.t : '') + ' alarm. Give him his MORNING BRIEFING in English, warm and upbeat, about 20 to 30 seconds: ' +
+            'say good morning, the time and today\'s date; today\'s weather (temperature, rain chance, what to wear if useful); ' +
+            'his activities today (adamActivitiesToday, e.g. BJJ, with the time) or, if none, mention tomorrow\'s if there are any; any timers or other alarms today; ' +
+            'do NOT mention prayer times in the briefing; ' + (noteTxt ? 'then read these notes for him clearly, word for word: ' + noteTxt + ' ; ' : '') +
+            'end by asking if he needs anything. Use only the LIVE INFO, do not invent anything.)';
+        L.ws.send(JSON.stringify({ clientContent: { turns: [{ role: 'user', parts: [{ text: brief }] }], turnComplete: true } }));
       }
       if (L.wake) L.ws.send(JSON.stringify({ clientContent: { turns: [{ role: 'user', parts: [{ text: '(Adam just said "Hey Jarvis" to wake you up. Answer with a very short greeting, like "Yes?" or "At your service." in English, then wait for his request.)' }] }], turnComplete: true } }));
       return;
@@ -797,7 +816,7 @@
 <script>
 /* auto-update: every 5 min, look for a newer version of this page and reload (home-screen apps keep old copies otherwise) */
 (function () {
-  var PAGE_VER = '2026-11-23b';
+  var PAGE_VER = '2026-11-23c';
   function busy() { var a = document.getElementsByTagName('audio'); for (var i = 0; i < a.length; i++) if (!a[i].paused) return true; return false; }
   function check() {
     var x = new XMLHttpRequest();
