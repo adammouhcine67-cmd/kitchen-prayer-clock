@@ -337,6 +337,53 @@ body{background:#04060b}
 .ai-send{height:60px;padding:0 20px;margin-left:10px;border-radius:20px;border:0;background:linear-gradient(140deg,#5eb0ff,#7c5cff);color:#fff;font-size:18px;font-weight:700;cursor:pointer}
 .ai-end{height:60px;padding:0 26px;margin-left:10px;border-radius:20px;border:0;background:#ef4444;color:#fff;font-size:18px;font-weight:700;cursor:pointer}
 @media (orientation:portrait){.orb{width:230px;height:230px}.orb.mini{width:32px;height:32px}}
+
+/* ===== v4: same layout as the room iPad: tiles around a centered clock, light follows the next prayer ===== */
+body[data-p="fajr"],body[data-p="dhuhr"]{--kacc:#ffc857;--kacc2:#5eb0ff}
+body[data-p="asr"]{--kacc:#ff9f43;--kacc2:#ff5e7a}
+body[data-p="maghrib"]{--kacc:#ff5e8a;--kacc2:#7c5cff}
+body[data-p="isha"]{--kacc:#8b92ff;--kacc2:#2563eb}
+.kg1{background:radial-gradient(closest-side,var(--kacc),rgba(0,0,0,0))!important;opacity:.34}
+.kg2{background:radial-gradient(closest-side,var(--kacc2),rgba(0,0,0,0))!important;opacity:.34}
+.app.kb{grid-template-columns:1.3fr 1.1fr 1.1fr 1.3fr;grid-template-rows:1fr 1fr 1fr .78fr;
+ grid-template-areas:"p h h a" "p h h a" "p h h a" "p m c a"}
+.prayers{grid-area:p;flex-direction:column;margin:-6px 0}
+.p{margin:6px 0;flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center}
+.p .tm{font-size:46px}
+.hero{padding:22px 26px}
+.hero:before{background:linear-gradient(90deg,rgba(0,0,0,0),var(--kacc),rgba(0,0,0,0))}
+.hero-top{align-items:center}
+.ht-r{display:flex;align-items:center}
+.kround{width:44px;height:44px;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:#c9d3e3;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center}
+.kround svg{width:20px;height:20px}
+.clock{font-size:138px;letter-spacing:-4px}
+.hero-bot{display:flex;align-items:center;justify-content:space-between}
+.hero-bot .wmini{margin-right:18px;font-size:30px}
+.hero-bot .wmini .wt{font-size:30px}
+.hero-bot .next-row{flex:1;min-width:0}
+.hijri{color:var(--kacc)}
+.next b{color:var(--kacc)}
+.bar i{background:linear-gradient(90deg,var(--kacc2),var(--kacc));box-shadow:0 0 10px var(--kacc)}
+/* the next prayer lights up like an active room mode */
+.p.current{color:#fff;border-color:var(--kacc);
+ background:linear-gradient(160deg,rgba(255,255,255,.1),rgba(255,255,255,.02) 70%),radial-gradient(circle at 15% 10%,var(--kacc),rgba(0,0,0,0) 75%);
+ box-shadow:0 0 0 1px var(--kacc),0 0 38px -6px var(--kacc),inset 0 1px 0 rgba(255,255,255,.25)}
+.kbtn.msg,.kbtn.pc{padding:0 16px}
+.up-what{white-space:normal!important;line-height:1.1}
+.up.first .up-what{font-size:28px}.up-what{font-size:23px}
+.up-tm{font-size:30px}.up.first .up-tm{font-size:36px}
+.up-em{font-size:38px;margin-right:10px}.up.first .up-em{font-size:46px}
+.up-day{font-size:12px;letter-spacing:.14em}
+.next{white-space:normal}
+.kjv{margin-right:10px}
+@media (orientation:portrait){
+ .app.kb{grid-template-columns:repeat(4,1fr);grid-template-rows:1.15fr .55fr 1.6fr .45fr;grid-template-areas:"h h h h" "p p p p" "a a a a" "m m c c"}
+ .prayers{flex-direction:row;margin:0 -6px}
+ .p{margin:0 6px}
+ .p .tm{font-size:36px}
+ .clock{font-size:130px}
+ .up-in{display:none}
+}
 </style>
 </head>
 <body>
@@ -345,10 +392,10 @@ body{background:#04060b}
  <section class="t hero">
   <div class="hero-top">
    <div class="dates"><div class="greg" id="greg"></div><div class="hijri" id="hijri"></div></div>
-   <div class="ht-r"><button class="kjv" id="kJarvis"><span class="orb mini"><i></i><i></i><b></b></span><span>Jarvis</span></button><div class="wmini" id="weather"></div></div>
+   <div class="ht-r"><button class="kjv" id="kJarvis"><span class="orb mini"><i></i><i></i><b></b></span><span>Jarvis</span></button><button class="kround" id="openSettings" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg></button></div>
   </div>
   <div class="clock" id="clock">--:--</div>
-  <div class="next-row"><div class="next" id="next"></div><div class="bar"><i id="bar"></i></div></div>
+  <div class="hero-bot"><div class="wmini" id="weather"></div><div class="next-row"><div class="next" id="next"></div><div class="bar"><i id="bar"></i></div></div></div>
   <span id="cityName" class="hidden"></span>
  </section>
  <div class="prayers" id="prayers"></div>
@@ -358,7 +405,6 @@ body{background:#04060b}
  </section>
  <button class="t kbtn msg" id="openIc"><span class="ki"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 12.5h5"/></svg></span><span class="kt"><small>Message</small><b>Adam</b></span></button>
  <button class="t kbtn pc" id="openPc"><span class="ki"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></span><span class="kt"><small>Adam's</small><b>PC</b></span></button>
- <button class="t kbtn set" id="openSettings" aria-label="Settings"><span class="ki"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg></span></button>
 </div>
 
 <div class="warn-banner hidden" id="warnBanner"><span class="pulse">🕐</span> <span id="warnText"></span> <span class="x">✕</span></div>
@@ -709,6 +755,7 @@ function tick() {
   }
   var nextTime = next.time.getTime(), prevTime = prev.time.getTime();
 
+  if (document.body.getAttribute('data-p') !== next.k) document.body.setAttribute('data-p', next.k);   // the whole screen takes the next prayer's colour
   $('next').innerHTML = '<b></b> in <span class="count"></span>';
   $('next').querySelector('b').textContent = next.en;
   $('next').querySelector('.count').textContent = fmtCountdown(nextTime - t);
@@ -1379,7 +1426,7 @@ setInterval(loadWeather, 15 * 60 * 1000);
 <script>
 /* auto-update: every 5 min, look for a newer version of this page and reload (home-screen apps keep old copies otherwise) */
 (function () {
-  var PAGE_VER = '2026-11-22e';
+  var PAGE_VER = '2026-11-23e';
   function busy() { var a = document.getElementsByTagName('audio'); for (var i = 0; i < a.length; i++) if (!a[i].paused) return true; return false; }
   function check() {
     var x = new XMLHttpRequest();
