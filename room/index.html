@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="My Room">
 <meta name="theme-color" content="#04060b">
 <title>My Room</title>
-<link rel="stylesheet" href="room.css?v=2026-11-22g">
+<link rel="stylesheet" href="room.css?v=2026-11-23a">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.js"></script>
 </head>
 <body data-mode="none">
@@ -69,9 +69,12 @@
 <!-- Alarms sheet -->
 <div class="modal hidden" id="alarmSheet"><div class="sheet">
  <h2>⏰ Alarms</h2>
- <div class="row"><input type="time" id="alarmTime" value="07:00"><input type="text" id="alarmLabel" placeholder="Label (optional)" style="flex:1"><button class="btn" id="addAlarm">Add</button></div>
+ <div class="row"><input type="time" id="alarmTime" value="06:40"><input type="text" id="alarmLabel" placeholder="Label (optional)" style="flex:1"><button class="btn" id="addAlarm">Add</button></div>
+ <label class="chk"><input type="checkbox" id="alarmBrief" checked> ☀️ Jarvis morning briefing when I press Stop</label>
+ <input type="text" id="alarmNote" placeholder="Note for Jarvis to say every time (optional), e.g. pack the gym bag" style="width:100%;margin-top:8px">
  <ul class="list" id="alarmList"></ul>
- <p class="hint">Alarms ring every day at that time while this page is open. Keep the iPad plugged in with Auto-Lock off.</p>
+ <div class="notes" id="briefNotes"></div>
+ <p class="hint">Alarms ring every day while this page is open: keep the iPad plugged in, Auto-Lock off, volume up. Tip: say "Hey Jarvis, add a note to my briefing…" to add one-time notes.</p>
  <button class="btn ghost close" data-close>Close</button>
 </div></div>
 
@@ -111,7 +114,7 @@
  <div class="row"><button class="btn ghost" id="snooze">Snooze 5 min</button><button class="btn" id="stopRing">Stop</button></div>
 </div>
 
-<div class="tapnote" id="tapnote">Tap anywhere to turn on sounds</div>
+<div class="tapwall" id="tapnote"><div class="tw-in"><div class="tw-ic">🔊</div><div class="tw-t">Tap anywhere to turn sound on</div><div class="tw-s">Alarms and "Hey Jarvis" can't work until you tap (iPad rule after a restart or update).</div></div></div>
 <div class="toast" id="toast"></div>
 <audio id="player" preload="auto"></audio>
 
@@ -248,14 +251,46 @@
   document.addEventListener('touchend', unlock, { passive: true });
   document.addEventListener('click', unlock);
   player.loop = true;
-  function startRing(title) {
-    $('ringTitle').textContent = title; $('ring').classList.remove('hidden');
-    player.muted = false; player.currentTime = 0; var p = player.play(); if (p && p.catch) p.catch(function () {});
-    clearTimeout(startRing.t); startRing.t = setTimeout(stopRing, 5 * 60 * 1000);
+  var ringAlarm = null, beepT = null;
+  var beepOut = null, ringStart = 0;
+  function beepOnce() {   // loud alarm: sharp high beeps (the pitch people hear best), through Web Audio as well as the normal player
+    try {
+      var c = AUD.ctx; if (!c) return; if (c.state === 'suspended') c.resume();
+      if (!beepOut) { beepOut = c.createDynamicsCompressor(); beepOut.threshold.value = -6; beepOut.ratio.value = 20; var mg = c.createGain(); mg.gain.value = 1.6; beepOut.connect(mg); mg.connect(c.destination); }
+      var t0 = c.currentTime;
+      [0, 0.13, 0.26, 0.39].forEach(function (dt) {
+        [2700, 3200].forEach(function (fq, j) {
+          var o = c.createOscillator(), g = c.createGain(); o.type = 'square'; o.frequency.value = fq;
+          o.connect(g); g.connect(beepOut);
+          g.gain.setValueAtTime(0.0001, t0 + dt); g.gain.exponentialRampToValueAtTime(j ? 0.6 : 0.9, t0 + dt + 0.005); g.gain.setValueAtTime(j ? 0.6 : 0.9, t0 + dt + 0.08); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dt + 0.1);
+          o.start(t0 + dt); o.stop(t0 + dt + 0.11);
+        });
+      });
+      if (Date.now() - ringStart > 30000 && !beepOnce.fast) { beepOnce.fast = true; clearInterval(beepT); beepT = setInterval(beepOnce, 650); }   // gets more urgent
+    } catch (e) {}
   }
-  function stopRing() { player.pause(); player.currentTime = 0; $('ring').classList.add('hidden'); clearTimeout(startRing.t); }
-  $('stopRing').onclick = stopRing;
-  $('snooze').onclick = function () { stopRing(); timers.push({ id: Date.now(), end: Date.now() + 5 * 60000, label: 'Snooze' }); saveTimers(); renderTimers(); };
+  function audioSessionPlayback(on) {   // newer iPads: play even when the iPad is on silent
+    try { if (navigator.audioSession) navigator.audioSession.type = on ? 'playback' : 'auto'; } catch (e) {}
+  }
+  function startRing(title, alarm) {
+    ringAlarm = alarm || null;
+    $('ringTitle').textContent = title; $('ring').classList.remove('hidden');
+    if (typeof liveStop === 'function' && live) liveStop(false);
+    pauseMicForRing();
+    player.muted = false; player.volume = 1; player.currentTime = 0; var p = player.play(); if (p && p.catch) p.catch(function () {});
+    audioSessionPlayback(true); ringStart = Date.now(); beepOnce.fast = false;
+    clearInterval(beepT); beepOnce(); beepT = setInterval(beepOnce, 1000);
+    $('stopRing').textContent = ringAlarm && ringAlarm.brief ? 'Stop · ☀️ Briefing' : 'Stop';
+    clearTimeout(startRing.t); startRing.t = setTimeout(function () { stopRing(true); }, 5 * 60 * 1000);
+  }
+  function stopRing(quiet) {
+    player.pause(); player.currentTime = 0; clearInterval(beepT); audioSessionPlayback(false); $('ring').classList.add('hidden'); clearTimeout(startRing.t);
+    var a = ringAlarm; ringAlarm = null;
+    if (a && a.brief && quiet !== true) { liveStart('brief', a); return; }
+    resumeMicAfterRing();
+  }
+  $('stopRing').onclick = function () { audioCtx(); stopRing(); };
+  $('snooze').onclick = function () { ringAlarm = null; stopRing(); timers.push({ id: Date.now(), end: Date.now() + 5 * 60000, label: 'Snooze' }); saveTimers(); renderTimers(); };
 
   // ---------- alarms ----------
   var alarms = store('room-alarms') || [];
@@ -266,16 +301,29 @@
       var li = document.createElement('li'); if (!a.on) li.className = 'off';
       var hm = a.t.split(':'), d = new Date(); d.setHours(+hm[0], +hm[1]);
       li.innerHTML = '<span class="tm"></span><span class="lb"></span><button class="switch' + (a.on ? ' on' : '') + '"></button><button class="del">✕</button>';
-      li.querySelector('.tm').textContent = fmt(d, false); li.querySelector('.lb').textContent = a.label || '';
+      li.querySelector('.tm').textContent = fmt(d, false); li.querySelector('.lb').textContent = (a.brief ? '☀️ ' : '') + (a.label || '') + (a.note ? ' · “' + a.note + '”' : '');
       li.querySelector('.switch').onclick = function () { a.on = !a.on; saveAlarms(); renderAlarms(); };
       li.querySelector('.del').onclick = function () { alarms = alarms.filter(function (x) { return x !== a; }); saveAlarms(); renderAlarms(); };
       ul.appendChild(li);
     });
-    renderChips();
+    renderChips(); renderBriefNotes();
+  }
+  // one-time notes for the next briefing (added by voice)
+  var briefNotes = store('room-brief-notes') || [];
+  function saveBriefNotes() { store('room-brief-notes', briefNotes); }
+  function renderBriefNotes() {
+    var box = $('briefNotes'); if (!box) return; box.innerHTML = '';
+    if (!briefNotes.length) return;
+    var h = document.createElement('div'); h.className = 'label'; h.textContent = 'Notes for the next briefing'; box.appendChild(h);
+    briefNotes.forEach(function (n, i) {
+      var r = document.createElement('div'); r.className = 'note'; r.innerHTML = '<span></span><button class="del">✕</button>';
+      r.querySelector('span').textContent = n; r.querySelector('.del').onclick = function () { briefNotes.splice(i, 1); saveBriefNotes(); renderBriefNotes(); };
+      box.appendChild(r);
+    });
   }
   $('addAlarm').onclick = function () {
     var t = $('alarmTime').value; if (!t) return;
-    alarms.push({ id: Date.now(), t: t, label: $('alarmLabel').value.trim(), on: true }); $('alarmLabel').value = '';
+    alarms.push({ id: Date.now(), t: t, label: $('alarmLabel').value.trim(), on: true, brief: $('alarmBrief').checked, note: $('alarmNote').value.trim() }); $('alarmLabel').value = ''; $('alarmNote').value = '';
     saveAlarms(); renderAlarms(); toast('Alarm set for ' + t);
   };
 
@@ -324,7 +372,7 @@
     if (key !== lastMinuteKey) {
       lastMinuteKey = key;
       var hm = pad(d.getHours()) + ':' + pad(d.getMinutes());
-      alarms.forEach(function (a) { if (a.on && a.t === hm) startRing('⏰ ' + (a.label || 'Alarm')); });
+      alarms.forEach(function (a) { if (a.on && a.t === hm) startRing('⏰ ' + (a.label || 'Alarm'), a); });
       if (d.getMinutes() % 15 === 0) loadWeather();
     }
     var now = Date.now(), done = timers.filter(function (t) { return t.end <= now; });
@@ -394,10 +442,12 @@
       parameters: { type: 'OBJECT', properties: { mode: { type: 'STRING', enum: ['gaming', 'study', 'sleep', 'adam', 'dad', 'none'] } }, required: ['mode'] } },
     { name: 'pc_action', description: 'One PC action: ready (wake + sign in Adam), cod (Call of Duty), chrome, sleep, dad (switch to Dad and start Mortal Shell), study.',
       parameters: { type: 'OBJECT', properties: { action: { type: 'STRING', enum: ['ready', 'cod', 'chrome', 'sleep', 'dad', 'study'] } }, required: ['action'] } },
-    { name: 'set_alarm', description: 'Set a daily alarm on this iPad.', parameters: { type: 'OBJECT', properties: { time: { type: 'STRING', description: '24-hour HH:MM' }, label: { type: 'STRING' } }, required: ['time'] } },
+    { name: 'set_alarm', description: 'Set a daily alarm on this iPad (with a morning briefing when Adam presses Stop, unless briefing is false).', parameters: { type: 'OBJECT', properties: { time: { type: 'STRING', description: '24-hour HH:MM' }, label: { type: 'STRING' }, briefing: { type: 'BOOLEAN' }, note: { type: 'STRING', description: 'note read in every briefing for this alarm' } }, required: ['time'] } },
     { name: 'delete_alarms', description: 'Delete all alarms.', parameters: { type: 'OBJECT', properties: {} } },
     { name: 'set_timer', description: 'Start a countdown timer.', parameters: { type: 'OBJECT', properties: { minutes: { type: 'NUMBER' }, label: { type: 'STRING' } }, required: ['minutes'] } },
     { name: 'cancel_timers', description: 'Stop all timers.', parameters: { type: 'OBJECT', properties: {} } },
+    { name: 'add_briefing_note', description: 'Save a one-time note that Jarvis will read in Adam\'s next morning briefing (after his alarm).', parameters: { type: 'OBJECT', properties: { text: { type: 'STRING' } }, required: ['text'] } },
+    { name: 'set_alarm_briefing', description: 'Turn the morning briefing on or off for an alarm, and optionally set the note read every time.', parameters: { type: 'OBJECT', properties: { time: { type: 'STRING', description: 'HH:MM of the alarm' }, briefing: { type: 'BOOLEAN' }, note: { type: 'STRING' } }, required: ['time'] } },
     { name: 'send_kitchen_message', description: 'Send a short text message to the kitchen iPad (Dad reads it, it is read out loud).', parameters: { type: 'OBJECT', properties: { text: { type: 'STRING' } }, required: ['text'] } }
   ] }];
   function aiState(st, msg) {
@@ -424,7 +474,8 @@
     return {
       now: new Date().toString(), city: S.city || 'not set', weather: wtxt, prayersToday: prayersToday,
       roomMode: S.mode, pc: (Date.now() - pcSeen < 45000) ? (pcAwake ? 'on' : 'asleep') : 'unknown',
-      alarms: alarms.map(function (a) { return a.t + (a.label ? ' ' + a.label : '') + (a.on ? '' : ' (off)'); }),
+      alarms: alarms.map(function (a) { return a.t + (a.label ? ' ' + a.label : '') + (a.on ? '' : ' (off)') + (a.brief ? ' [briefing' + (a.note ? ', note: ' + a.note : '') + ']' : ''); }),
+      notesForNextBriefing: briefNotes,
       timers: timers.map(function (t) { return t.label + ': ' + Math.ceil((t.end - Date.now()) / 60000) + ' min left'; })
     };
   }
@@ -454,12 +505,18 @@
     else if (a.name === 'set_alarm') {
       var m = /^(\d{1,2}):(\d{2})/.exec(String(g.time || ''));
       if (!m) return 'bad time';
-      alarms.push({ id: Date.now(), t: pad(+m[1]) + ':' + m[2], label: String(g.label || ''), on: true }); saveAlarms(); renderAlarms();
+      alarms.push({ id: Date.now(), t: pad(+m[1]) + ':' + m[2], label: String(g.label || ''), on: true, brief: g.briefing !== false, note: String(g.note || '') }); saveAlarms(); renderAlarms();
     } else if (a.name === 'delete_alarms') { alarms = []; saveAlarms(); renderAlarms(); }
     else if (a.name === 'set_timer') {
       var mn = parseFloat(g.minutes); if (!(mn > 0)) return 'bad minutes';
       timers.push({ id: Date.now(), end: Date.now() + mn * 60000, label: String(g.label || (mn + ' min')) }); saveTimers(); renderTimers();
     } else if (a.name === 'cancel_timers') { timers = []; saveTimers(); renderTimers(); }
+    else if (a.name === 'add_briefing_note') { if (!g.text) return 'no text'; briefNotes.push(String(g.text)); saveBriefNotes(); renderBriefNotes(); return 'saved for the next briefing'; }
+    else if (a.name === 'set_alarm_briefing') {
+      var mt = /^(\d{1,2}):(\d{2})/.exec(String(g.time || '')); if (!mt) return 'bad time';
+      var tt = pad(+mt[1]) + ':' + mt[2], al = alarms.filter(function (x) { return x.t === tt; })[0]; if (!al) return 'no alarm at ' + tt;
+      if (g.briefing !== undefined) al.brief = !!g.briefing; if (g.note !== undefined) al.note = String(g.note); saveAlarms(); renderAlarms(); return 'updated';
+    }
     else if (a.name === 'send_kitchen_message') { if (!sendKitchen(String(g.text || ''))) return 'not connected'; }
     else return 'unknown tool';
     return 'done';
@@ -488,6 +545,11 @@
     }, function (e) { AUD.starting = null; throw e; });
     return AUD.starting;
   }
+  function pauseMicForRing() {   // a live microphone makes iPads play other sounds quietly
+    if (!AUD.stream) return;
+    AUD.stream.getTracks().forEach(function (t) { t.onended = null; t.stop(); }); AUD.stream = null; wakeBadge();
+  }
+  function resumeMicAfterRing() { if (wakeOn()) wakeStart(); }
   function micRelease() {   // only when "Hey Jarvis" is off
     if (wakeOn() || !AUD.stream) return;
     AUD.stream.getTracks().forEach(function (t) { t.onended = null; t.stop(); }); AUD.stream = null;
@@ -531,6 +593,16 @@
   function liveMsg(L, m) {
     if (m.setupComplete) {
       L.ready = true; micStart(L); aiState('listening', 'Listening…');
+      if (L.brief) {
+        var notes = [];
+        if (L.alarm && L.alarm.note) notes.push(L.alarm.note);
+        notes = notes.concat(briefNotes); briefNotes = []; saveBriefNotes(); renderBriefNotes();
+        L.ws.send(JSON.stringify({ clientContent: { turns: [{ role: 'user', parts: [{ text:
+          '(Adam just pressed Stop on his ' + (L.alarm ? L.alarm.t : '') + ' alarm. Give him his MORNING BRIEFING in English, warm and upbeat, about 20 to 30 seconds: ' +
+          'say good morning and the time; today\'s weather (temperature, rain chance, what to wear if useful); the prayer times still to come today and the next one; ' +
+          'any timers or other alarms today; ' + (notes.length ? 'then read these notes for him: ' + notes.map(function (n, i) { return (i + 1) + ') ' + n; }).join(' ') + ' ; ' : '') +
+          'end by asking if he needs anything. Use only the LIVE INFO, do not invent anything.)' }] }], turnComplete: true } }));
+      }
       if (L.wake) L.ws.send(JSON.stringify({ clientContent: { turns: [{ role: 'user', parts: [{ text: '(Adam just said "Hey Jarvis" to wake you up. Answer with a very short greeting, like "Yes?" or "At your service." in English, then wait for his request.)' }] }], turnComplete: true } }));
       return;
     }
@@ -552,18 +624,19 @@
       L.ws.send(JSON.stringify({ toolResponse: { functionResponses: res } }));
     }
   }
-  function liveStart(byWake) {
+  function liveStart(how, alarm) {
     if (live) return;
+    var byWake = how === true || how === 'wake';
     $('aiLog').innerHTML = ''; capMe = capAi = null;
     $('aiSheet').classList.remove('hidden'); aiState('thinking', 'Connecting…');
-    var L = { ctx: audioCtx(), sources: [], playT: 0, closed: false, lastAct: Date.now(), wake: !!byWake };
+    var L = { ctx: audioCtx(), sources: [], playT: 0, closed: false, lastAct: Date.now(), wake: !!byWake, brief: how === 'brief', alarm: alarm || null };
     live = L;
     L.tick = setInterval(function () {
       if (!L.ready) return;
       var talking = L.ctx.currentTime < L.playT;
       if (talking && $('aiOrb').className.indexOf('speaking') < 0) aiState('speaking', '');
       else if (!talking && $('aiOrb').className.indexOf('listening') < 0) aiState('listening', 'Listening…');
-      if (Date.now() - L.lastAct > (L.wake ? 45000 : 90000)) { liveStop(L.wake); if (!L.wake) aiState('', 'Went quiet, so I hung up. Tap the orb to talk again.'); }
+      if (Date.now() - L.lastAct > (L.wake || L.brief ? 45000 : 90000)) { liveStop(L.wake || L.brief); if (!L.wake && !L.brief) aiState('', 'Went quiet, so I hung up. Tap the orb to talk again.'); }
     }, 250);
     micOpen()
       .then(function (stream) {
@@ -638,6 +711,12 @@
   }
   AUD.feeds.push(wakeFeed);
   window.__jarvis = { wk: WK, aud: AUD };   // for troubleshooting
+  window.__noReload = function () {
+    var d = new Date(), h = d.getHours(), nowM = h * 60 + d.getMinutes();
+    if (h < 9 || h >= 21) return true;                                      // night: never reload (sound would be blocked until a tap)
+    if (live || !$('ring').classList.contains('hidden')) return true;
+    return alarms.some(function (a) { if (!a.on) return false; var p = a.t.split(':'), m = +p[0] * 60 + +p[1]; return ((m - nowM + 1440) % 1440) < 60; });
+  };
   function wakePump() {
     if (WK.running || !WK.q.length) return;
     if (WK.q.length > 25) { WK.q = WK.q.slice(-4); WK.melBuf = []; WK.prev = null; }      // fell behind: skip ahead
@@ -711,14 +790,14 @@
 <script>
 /* auto-update: every 5 min, look for a newer version of this page and reload (home-screen apps keep old copies otherwise) */
 (function () {
-  var PAGE_VER = '2026-11-22g';
+  var PAGE_VER = '2026-11-23a';
   function busy() { var a = document.getElementsByTagName('audio'); for (var i = 0; i < a.length; i++) if (!a[i].paused) return true; return false; }
   function check() {
     var x = new XMLHttpRequest();
     x.open('GET', location.pathname + '?v=' + Date.now(), true);
     x.onload = function () {
       var m = /PAGE_VER = '([^']+)'/.exec(x.responseText || '');
-      if (x.status === 200 && m && m[1] !== PAGE_VER && !busy()) location.replace(location.pathname + '?v=' + m[1]);
+      if (x.status === 200 && m && m[1] !== PAGE_VER && !busy() && !(window.__noReload && window.__noReload())) location.replace(location.pathname + '?v=' + m[1]);
     };
     x.send();
   }

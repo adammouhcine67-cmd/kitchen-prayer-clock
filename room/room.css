@@ -191,3 +191,14 @@ input[type=time],input[type=number],input[type=text]{background:#0b1426;border:1
 .ai-end{flex:none;height:64px;padding:0 54px;border-radius:32px;border:0;cursor:pointer;font-size:20px;font-weight:700;color:#fff;background:#ef4444;box-shadow:0 0 30px rgba(239,68,68,.45)}
 .ai-end:active{transform:scale(.95)}
 @media (orientation:portrait){.orb{width:240px;height:240px}}
+
+/* ---------- tap wall (sound is blocked until a tap) ---------- */
+.tapwall{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:rgba(4,6,11,.82);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+.tapwall.hidden{display:none!important}
+.tw-in{text-align:center;padding:40px 50px;border-radius:30px;border:1px solid rgba(94,176,255,.45);background:rgba(94,176,255,.1);box-shadow:0 0 50px -10px #5eb0ff;max-width:560px}
+.tw-ic{font-size:64px}.tw-t{font-size:30px;font-weight:700;margin-top:10px}.tw-s{font-size:17px;color:var(--muted);margin-top:10px;line-height:1.4}
+/* alarms: briefing options */
+.chk{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:17px}
+.chk input{width:22px;height:22px}
+.notes{margin-top:14px}.notes .label{margin:0 0 6px 2px}
+.note{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-top:1px solid var(--line);font-size:17px}
