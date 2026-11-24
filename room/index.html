@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="My Room">
 <meta name="theme-color" content="#04060b">
 <title>My Room</title>
-<link rel="stylesheet" href="room.css?v=2026-11-23d">
+<link rel="stylesheet" href="room.css?v=2026-11-24a">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.js"></script>
 </head>
 <body data-mode="none">
@@ -255,21 +255,17 @@
   document.addEventListener('click', unlock);
   player.loop = true;
   var ringAlarm = null, beepT = null;
-  var beepOut = null, ringStart = 0;
-  function beepOnce() {   // loud alarm: sharp high beeps (the pitch people hear best), through Web Audio as well as the normal player
+  var ringStart = 0;
+  function beepOnce() {   // gentle alarm: soft rounded chime that starts quiet and slowly gets louder (about a minute)
     try {
       var c = AUD.ctx; if (!c) return; if (c.state === 'suspended') c.resume();
-      if (!beepOut) { beepOut = c.createDynamicsCompressor(); beepOut.threshold.value = -6; beepOut.ratio.value = 20; var mg = c.createGain(); mg.gain.value = 1.6; beepOut.connect(mg); mg.connect(c.destination); }
-      var t0 = c.currentTime;
-      [0, 0.13, 0.26, 0.39].forEach(function (dt) {
-        [2700, 3200].forEach(function (fq, j) {
-          var o = c.createOscillator(), g = c.createGain(); o.type = 'square'; o.frequency.value = fq;
-          o.connect(g); g.connect(beepOut);
-          g.gain.setValueAtTime(0.0001, t0 + dt); g.gain.exponentialRampToValueAtTime(j ? 0.6 : 0.9, t0 + dt + 0.005); g.gain.setValueAtTime(j ? 0.6 : 0.9, t0 + dt + 0.08); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dt + 0.1);
-          o.start(t0 + dt); o.stop(t0 + dt + 0.11);
-        });
+      var t0 = c.currentTime, k = Math.min(1, (Date.now() - ringStart) / 60000), peak = 0.04 + 0.14 * k;
+      [[659.25, 0], [880, 0.35], [1046.5, 0.7]].forEach(function (n) {
+        var o = c.createOscillator(), g = c.createGain(); o.type = 'sine'; o.frequency.value = n[0];
+        o.connect(g); g.connect(c.destination);
+        g.gain.setValueAtTime(0.0001, t0 + n[1]); g.gain.exponentialRampToValueAtTime(peak, t0 + n[1] + 0.04); g.gain.exponentialRampToValueAtTime(0.0001, t0 + n[1] + 1.4);
+        o.start(t0 + n[1]); o.stop(t0 + n[1] + 1.5);
       });
-      if (Date.now() - ringStart > 30000 && !beepOnce.fast) { beepOnce.fast = true; clearInterval(beepT); beepT = setInterval(beepOnce, 650); }   // gets more urgent
     } catch (e) {}
   }
   function audioSessionPlayback(on) {   // newer iPads: play even when the iPad is on silent
@@ -280,9 +276,9 @@
     $('ringTitle').textContent = title; $('ring').classList.remove('hidden');
     if (typeof liveStop === 'function' && live) liveStop(false);
     pauseMicForRing();
-    player.muted = false; player.volume = 1; player.currentTime = 0; var p = player.play(); if (p && p.catch) p.catch(function () {});
-    audioSessionPlayback(true); ringStart = Date.now(); beepOnce.fast = false;
-    clearInterval(beepT); beepOnce(); beepT = setInterval(beepOnce, 1000);
+    audioSessionPlayback(true); ringStart = Date.now();
+    if (!AUD.ctx || AUD.ctx.state !== 'running') { player.muted = false; player.currentTime = 0; var p = player.play(); if (p && p.catch) p.catch(function () {}); }   // backup sound only if the gentle chime can't play
+    clearInterval(beepT); beepOnce(); beepT = setInterval(beepOnce, 3000);
     $('stopRing').textContent = ringAlarm && ringAlarm.brief ? 'Stop · ☀️ Briefing' : 'Stop';
     clearTimeout(startRing.t); startRing.t = setTimeout(function () { stopRing(true); }, 5 * 60 * 1000);
   }
@@ -826,7 +822,7 @@
 <script>
 /* auto-update: every 5 min, look for a newer version of this page and reload (home-screen apps keep old copies otherwise) */
 (function () {
-  var PAGE_VER = '2026-11-23d';
+  var PAGE_VER = '2026-11-24a';
   function busy() { var a = document.getElementsByTagName('audio'); for (var i = 0; i < a.length; i++) if (!a[i].paused) return true; return false; }
   function check() {
     var x = new XMLHttpRequest();
