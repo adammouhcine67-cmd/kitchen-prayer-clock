@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes">
-<title>SANDSTORM Ñ Tactical 5v5</title>
+<title>SANDSTORM â€” Tactical 5v5</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;color:#fff;user-select:none;-webkit-user-select:none}
@@ -234,7 +234,7 @@ body.touch #spec{bottom:110px;font-size:13px}
 .camo.lock{filter:grayscale(1) brightness(.45);cursor:not-allowed}
 .camo em{position:absolute;left:0;right:0;bottom:0;font-size:8px;letter-spacing:1px;background:rgba(0,0,0,.65);font-style:normal;text-align:center;padding:2px 0}
 .camo .lk{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:16px}
-.camo.m::after{content:"?";position:absolute;right:3px;top:1px;font-size:10px;color:#ffd970}
+.camo.m::after{content:"â˜…";position:absolute;right:3px;top:1px;font-size:10px;color:#ffd970}
 .camoname{font-size:12px;margin-top:6px;letter-spacing:1px;min-height:16px}.camoname small{opacity:.6}
 .opgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .opc{pointer-events:auto;cursor:pointer;padding:10px;border-radius:4px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04)}
@@ -254,7 +254,7 @@ body.touch .arm-list{width:170px}body.touch .arm-side{width:290px}body.touch .ar
 <div id="game"></div>
 <div id="hud">
   <canvas id="radar" class="h" width="420" height="420"></canvas>
-  <div id="money" class="h">$800</div><div id="loc" class="h"></div><div id="buyzone" class="h">? BUY ZONE Ñ PRESS B</div>
+  <div id="money" class="h">$800</div><div id="loc" class="h"></div><div id="buyzone" class="h">â—† BUY ZONE â€” PRESS B</div>
   <div id="top" class="h">
     <div class="tm ct"><div class="pips" id="pipsCT"></div><div class="sc" id="scCT">0</div></div>
     <div id="timer">1:55</div><div id="bombicon" style="align-self:center;margin:0 34px"></div>
@@ -275,18 +275,18 @@ body.touch .arm-list{width:170px}body.touch .arm-side{width:290px}body.touch .ar
   <div id="toast" class="h"></div>
   <div id="spec" class="h"></div>
   <div id="banner" class="h"><div class="bg"><b></b><span></span></div></div>
-  <div id="vitals" class="h"><div class="vit"><i>?</i><span id="hpv">100</span><div class="bar"><b id="hpb" style="width:100%"></b></div></div><div class="vit"><i>?</i><span id="arv">0</span><div class="bar"><b id="arb" style="width:0"></b></div></div><div id="kitic">KIT</div><div id="c4ic">C4</div></div>
+  <div id="vitals" class="h"><div class="vit"><i>âœš</i><span id="hpv">100</span><div class="bar"><b id="hpb" style="width:100%"></b></div></div><div class="vit"><i>â›¨</i><span id="arv">0</span><div class="bar"><b id="arb" style="width:0"></b></div></div><div id="kitic">KIT</div><div id="c4ic">C4</div></div>
   <div id="slots" class="h"></div>
   <div id="ammo" class="h"><div id="wname">USP-S</div><div id="ammoN">12<small> / 24</small></div></div>
   <div id="fps" class="h"></div>
 </div>
 <div id="scope"></div><div id="acog"><u></u><u></u><b></b><i></i></div><div id="hurt"></div><div id="flash"></div>
 <div id="clickhint">CLICK TO PLAY</div>
-<div id="rotate">?<br><br>ROTATE YOUR PHONE TO LANDSCAPE</div>
+<div id="rotate">â†»<br><br>ROTATE YOUR PHONE TO LANDSCAPE</div>
 
 <div id="menu" class="ov">
   <div class="logo">SANDSTORM</div>
-  <div class="tag">TACTICAL 5v5 á BOMB DEFUSAL</div>
+  <div class="tag">TACTICAL 5v5 Â· BOMB DEFUSAL</div>
   <div id="plvl"></div>
   <div class="panel">
     <div class="row"><label>MAP</label><div class="opts" data-set="map"><button data-v="oasis">OASIS (NEW)</button><button data-v="sandstorm">SANDSTORM</button></div></div>
@@ -299,21 +299,21 @@ body.touch .arm-list{width:170px}body.touch .arm-side{width:290px}body.touch .ar
     <div class="row"><label>AIM SMOOTHING</label><span><input type="range" data-range="smooth" min="0" max="1" step="0.05"> <b data-show="smooth"></b></span></div>
     <div class="row"><label>FIELD OF VIEW</label><span><input type="range" data-range="fov" min="70" max="105" step="1"> <b data-show="fov"></b></span></div>
     <div class="row"><label>VOLUME / MUSIC</label><span><input type="range" data-range="vol" min="0" max="1" step="0.05"> <input type="range" data-range="music" min="0" max="1" step="0.05"></span></div>
-    <div style="text-align:center"><div class="mbtns"><button class="btn arm" id="armbtn">ARMORY</button><button class="btn big" id="play">PLAY</button></div><div id="loading">GENERATING SOUNDSÉ</div></div>
+    <div style="text-align:center"><div class="mbtns"><button class="btn arm" id="armbtn">ARMORY</button><button class="btn big" id="play">PLAY</button></div><div id="loading">GENERATING SOUNDSâ€¦</div></div>
     <div class="ctrl">
       <span><b>WASD</b>move</span><span><b>MOUSE</b>aim / shoot</span><span><b>R-CLICK</b>aim / scope</span><span><b>SHIFT</b>sprint</span>
-      <span><b>SHIFT ?2</b>tactical sprint</span><span><b>CTRL</b>dive (moving) á lie down</span><span><b>SPACE</b>jump á mantle</span>
-      <span><b>C</b>crouch á slide (tap again: cancel)</span><span><b>R</b>reload</span><span><b>E</b>plant á defuse á pick up</span>
+      <span><b>SHIFT Ã—2</b>tactical sprint</span><span><b>CTRL</b>dive (moving) Â· lie down</span><span><b>SPACE</b>jump Â· mantle</span>
+      <span><b>C</b>crouch Â· slide (tap again: cancel)</span><span><b>R</b>reload</span><span><b>E</b>plant Â· defuse Â· pick up</span>
       <span><b>B</b>buy menu</span><span><b>TAB</b>scoreboard</span><span><b>1-5 / Q</b>weapons</span><span><b>G</b>drop weapon</span>
       <span><b>F</b>inspect</span><span><b>ESC / P</b>pause</span><span><b>M</b>mute</span><span><b>SPACE</b>fast-forward (dead)</span>
     </div>
   </div>
 </div>
 <div id="armory" class="ov">
-  <div class="arm-top"><div class="arm-title">ARMORY</div><div class="arm-tabs" id="armtabs"><button data-tab="weapons" class="sel">WEAPONS</button><button data-tab="operators">OPERATORS</button><button data-tab="profile">PROFILE</button></div><div class="arm-lvl" id="armlvl"></div><button class="btn" id="armclose">BACK ?</button></div>
-  <div class="arm-body"><div class="arm-list" id="armlist"></div><div class="arm-view"><canvas id="armcanvas"></canvas><div class="arm-name" id="armname"></div><div class="arm-hint">DRAG TO ROTATE á SCROLL TO ZOOM</div></div><div class="arm-side" id="armside"></div></div>
+  <div class="arm-top"><div class="arm-title">ARMORY</div><div class="arm-tabs" id="armtabs"><button data-tab="weapons" class="sel">WEAPONS</button><button data-tab="operators">OPERATORS</button><button data-tab="profile">PROFILE</button></div><div class="arm-lvl" id="armlvl"></div><button class="btn" id="armclose">BACK âœ•</button></div>
+  <div class="arm-body"><div class="arm-list" id="armlist"></div><div class="arm-view"><canvas id="armcanvas"></canvas><div class="arm-name" id="armname"></div><div class="arm-hint">DRAG TO ROTATE Â· SCROLL TO ZOOM</div></div><div class="arm-side" id="armside"></div></div>
 </div>
-<div id="buy" class="ov"><div class="bp"><h2>BUY MENU <span id="buymoney">$0</span></h2><div class="cats" id="buycats"></div><div class="note">CLICK OR PRESS THE NUMBER KEYS á B / ESC TO CLOSE á BUY TIME ENDS 20s INTO THE ROUND</div></div></div>
+<div id="buy" class="ov"><div class="bp"><h2>BUY MENU <span id="buymoney">$0</span></h2><div class="cats" id="buycats"></div><div class="note">CLICK OR PRESS THE NUMBER KEYS Â· B / ESC TO CLOSE Â· BUY TIME ENDS 20s INTO THE ROUND</div></div></div>
 <div id="board" class="ov"><div class="bp" id="boardin"></div></div>
 <div id="pause" class="ov"><div class="logo" style="font-size:52px">PAUSED</div><div class="panel" style="margin-top:18px" id="pausepanel"></div><div><button class="btn big" id="resume">RESUME</button></div><button class="btn" id="quit" style="margin-top:12px">QUIT TO MENU</button></div>
 <div id="over" class="ov"><div class="res" id="overres">VICTORY</div><div class="scr" id="overscr"></div><div class="panel" id="overboard"></div><button class="btn big" id="again">PLAY AGAIN</button><button class="btn" id="tomenu" style="margin-top:10px">MAIN MENU</button></div>
